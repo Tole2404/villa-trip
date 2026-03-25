@@ -37,8 +37,8 @@ export function MemberCard({ member, onUpdate, onDelete, onAddPayment, onDeleteP
           initialData={{
             name: member.name,
             phone: member.phone,
-            targetAmount: member.target_amount,
-            dpAmount: member.dp_amount,
+            target_amount: member.target_amount,
+            dp_amount: member.dp_amount,
           }}
           onSubmit={(data: { name: string; phone?: string; target_amount: number; dp_amount: number }) => {
             onUpdate(member.id, {

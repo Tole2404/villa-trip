@@ -128,7 +128,12 @@ export default function Home() {
               <h3 className="text-lg font-semibold mb-4">Tambah Anggota Baru</h3>
               <MemberForm
                 onSubmit={(data) => {
-                  addMember(data);
+                  addMember({
+                    name: data.name,
+                    phone: data.phone,
+                    targetAmount: data.target_amount,
+                    dpAmount: data.dp_amount,
+                  });
                   setShowAddForm(false);
                 }}
                 onCancel={() => setShowAddForm(false)}

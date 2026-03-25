@@ -72,10 +72,16 @@ export async function POST(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ memberId: string; paymentId: string }> }
+  { params }: { params: Promise<{ memberId: string }> }
 ) {
   try {
-    const { memberId, paymentId } = await params;
+    const { memberId } = await params;
+    const { searchParams } = new URL(request.url);
+    const paymentId = searchParams.get('paymentId');
+
+    if (!paymentId) {
+      return NextResponse.json({ error: 'paymentId is required' }, { status: 400 });
+    }
 
     await prisma.payment.delete({
       where: { id: paymentId },
