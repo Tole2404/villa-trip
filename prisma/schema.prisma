@@ -1,0 +1,41 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Member {
+  id            String    @id @default(uuid())
+  name          String
+  phone         String?
+  targetAmount  Int       @map("target_amount")
+  dpAmount      Int       @map("dp_amount")
+  dpPaid        Boolean   @default(false) @map("dp_paid")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  payments      Payment[]
+
+  @@map("members")
+}
+
+model Payment {
+  id        String   @id @default(uuid())
+  memberId  String   @map("member_id")
+  type      String   // 'dp', 'savings', 'full'
+  amount    Int
+  date      DateTime @db.Date
+  note      String?
+  proof     String?  // URL/link to bukti pembayaran (screenshot/struk)
+  createdAt DateTime @default(now()) @map("created_at")
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
