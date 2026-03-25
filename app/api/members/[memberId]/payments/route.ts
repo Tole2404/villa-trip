@@ -3,10 +3,10 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: Request,
-  { params }: { params: { memberId: string } }
+  { params }: { params: Promise<{ memberId: string }> }
 ) {
   try {
-    const { memberId } = params;
+    const { memberId } = await params;
 
     const payments = await prisma.payment.findMany({
       where: { memberId },
@@ -25,10 +25,10 @@ export async function GET(
 
 export async function POST(
   request: Request,
-  { params }: { params: { memberId: string } }
+  { params }: { params: Promise<{ memberId: string }> }
 ) {
   try {
-    const { memberId } = params;
+    const { memberId } = await params;
     const { type, amount, date, note, proof } = await request.json();
 
     // Create payment
@@ -72,10 +72,10 @@ export async function POST(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { memberId: string; paymentId: string } }
+  { params }: { params: Promise<{ memberId: string; paymentId: string }> }
 ) {
   try {
-    const { memberId, paymentId } = params;
+    const { memberId, paymentId } = await params;
 
     await prisma.payment.delete({
       where: { id: paymentId },
