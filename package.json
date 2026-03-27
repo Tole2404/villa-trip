@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postinstall": "prisma generate",
     "start": "next start",
     "serve": "npx serve@latest dist -p 3000 -s",
     "lint": "eslint"
