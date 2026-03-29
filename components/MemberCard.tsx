@@ -134,14 +134,21 @@ export function MemberCard({ member, onUpdate, onDelete, onAddPayment, onDeleteP
         </button>
       </div>
 
+      {/* Payment Form Modal */}
       {showPaymentForm && (
         <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]"
+          className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9999]"
           onClick={(e) => {
-            if (e.target === e.currentTarget) setShowPaymentForm(false);
+            if (e.target === e.currentTarget) {
+              e.stopPropagation();
+              setShowPaymentForm(false);
+            }
           }}
         >
-          <div className="bg-white rounded-xl p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-auto relative z-[101]">
+          <div 
+            className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-auto relative shadow-2xl animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="text-lg font-semibold mb-4">Tambah Pembayaran - {member.name}</h3>
             <PaymentForm
               member={member}
@@ -155,14 +162,15 @@ export function MemberCard({ member, onUpdate, onDelete, onAddPayment, onDeleteP
         </div>
       )}
 
+      {/* Payment History Modal */}
       {showHistory && (
         <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]"
+          className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9999]"
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowHistory(false);
           }}
         >
-          <div className="bg-white rounded-xl p-4 sm:p-6 w-full max-w-md md:max-w-2xl max-h-[85vh] overflow-auto relative z-[101]">
+          <div className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-md md:max-w-2xl max-h-[85vh] overflow-auto relative shadow-2xl animate-in zoom-in-95 duration-200">
             <PaymentHistory
               member={member}
               onClose={() => setShowHistory(false)}

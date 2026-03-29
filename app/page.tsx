@@ -213,7 +213,7 @@ export default function Home() {
               </div>
               
               {/* Quick filter chips */}
-              <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+              <div className="flex gap-1.5 overflow-  x-auto pb-1 -mx-1 px-1 scrollbar-hide">
                 {filterButtons.map((btn) => (
                   <button
                     key={btn.key}
@@ -370,7 +370,7 @@ export default function Home() {
       {/* Add Member Modal */}
       {showAddForm && (
         <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9999]"
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowAddForm(false);
           }}
@@ -396,7 +396,7 @@ export default function Home() {
       {/* Itinerary Modal for non-mobile */}
       {showItinerary && (
         <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9999]"
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowItinerary(false);
           }}

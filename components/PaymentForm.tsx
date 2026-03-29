@@ -107,7 +107,11 @@ export function PaymentForm({ member, onSubmit, onCancel }: PaymentFormProps) {
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Tambah Pembayaran - {member.name}</h3>
         <button
           type="button"
-          onClick={onCancel}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            onCancel();
+          }}
           className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           aria-label="Tutup"
         >
