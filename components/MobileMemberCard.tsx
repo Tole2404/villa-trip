@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { MemberWithStatus, Payment } from '@/types';
+import { PaymentForm } from './PaymentForm';
+import { PaymentHistory } from './PaymentHistory';
 
 interface MobileMemberCardProps {
   member: MemberWithStatus;
@@ -19,8 +21,10 @@ const statusConfig = {
   completed: { text: 'Lunas', color: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400', icon: '✅' },
 };
 
-export function MobileMemberCard({ member, onDelete, onAddPayment }: MobileMemberCardProps) {
+export function MobileMemberCard({ member, onUpdate, onDelete, onAddPayment, onDeletePayment, getPayments }: MobileMemberCardProps) {
   const [showActions, setShowActions] = useState(false);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   
   const status = statusConfig[member.status];
   const progress = Math.min(100, (member.total_paid / member.target_amount) * 100);
@@ -83,11 +87,19 @@ export function MobileMemberCard({ member, onDelete, onAddPayment }: MobileMembe
       {/* Action Buttons */}
       <div className="flex border-t border-gray-100 dark:border-gray-700">
         <button
-          onClick={() => onAddPayment(member.id, { type: 'savings', amount: member.remaining, date: new Date().toISOString().split('T')[0] })}
+          onClick={() => setShowPaymentForm(true)}
           className="flex-1 py-3 text-blue-600 dark:text-blue-400 font-medium text-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 active:bg-blue-100 dark:active:bg-blue-900/30 transition-colors flex items-center justify-center gap-1.5"
         >
           <span>💳</span>
           Bayar
+        </button>
+        <div className="w-px bg-gray-100 dark:bg-gray-700" />
+        <button
+          onClick={() => setShowHistory(true)}
+          className="flex-1 py-3 text-gray-600 dark:text-gray-400 font-medium text-sm hover:bg-gray-50 dark:hover:bg-gray-700/50 active:bg-gray-100 dark:active:bg-gray-700 transition-colors flex items-center justify-center gap-1.5"
+        >
+          <span>📝</span>
+          Riwayat
         </button>
         <div className="w-px bg-gray-100 dark:bg-gray-700" />
         <button
@@ -104,13 +116,13 @@ export function MobileMemberCard({ member, onDelete, onAddPayment }: MobileMembe
         <div className="bg-gray-50 dark:bg-gray-700/30 px-4 py-3 border-t border-gray-100 dark:border-gray-700 animate-in slide-in-from-top-2">
           <div className="flex gap-2">
             <button
-              onClick={() => { onAddPayment(member.id, { type: 'dp', amount: member.dp_amount, date: new Date().toISOString().split('T')[0] }); setShowActions(false); }}
+              onClick={() => { setShowPaymentForm(true); setShowActions(false); }}
               className="flex-1 py-2 px-3 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-lg text-sm font-medium active:scale-95 transition-transform"
             >
               Bayar DP
             </button>
             <button
-              onClick={() => { onAddPayment(member.id, { type: 'full', amount: member.remaining, date: new Date().toISOString().split('T')[0] }); setShowActions(false); }}
+              onClick={() => { setShowPaymentForm(true); setShowActions(false); }}
               className="flex-1 py-2 px-3 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg text-sm font-medium active:scale-95 transition-transform"
             >
               Pelunasan
@@ -121,6 +133,46 @@ export function MobileMemberCard({ member, onDelete, onAddPayment }: MobileMembe
             >
               🗑️
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Form Modal */}
+      {showPaymentForm && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowPaymentForm(false);
+          }}
+        >
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-auto relative z-[101]">
+            <PaymentForm
+              member={member}
+              onSubmit={(payment) => {
+                onAddPayment(member.id, payment);
+                setShowPaymentForm(false);
+              }}
+              onCancel={() => setShowPaymentForm(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Payment History Modal */}
+      {showHistory && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowHistory(false);
+          }}
+        >
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 w-full max-w-md md:max-w-2xl max-h-[85vh] overflow-auto relative z-[101]">
+            <PaymentHistory
+              member={member}
+              onClose={() => setShowHistory(false)}
+              onDeletePayment={onDeletePayment}
+              getPayments={getPayments}
+            />
           </div>
         </div>
       )}

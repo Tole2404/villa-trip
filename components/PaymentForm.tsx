@@ -103,36 +103,36 @@ export function PaymentForm({ member, onSubmit, onCancel }: PaymentFormProps) {
   return (
     <div className="space-y-4">
       {/* Header with Close Button */}
-      <div className="flex items-center justify-between pb-3 border-b border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900">Tambah Pembayaran - {member.name}</h3>
+      <div className="flex items-center justify-between pb-3 border-b border-gray-200 dark:border-gray-700">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Tambah Pembayaran - {member.name}</h3>
         <button
           type="button"
           onClick={onCancel}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           aria-label="Tutup"
         >
-          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
 
       {/* BCA Bank Info */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+      <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
         <div className="flex items-start gap-2">
-          <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
           </svg>
           <div>
-            <p className="text-sm font-semibold text-blue-800">Rekening BCA</p>
-            <p className="text-sm text-blue-700">a.n. Tunggul Bayu Kusuma</p>
+            <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">Rekening BCA</p>
+            <p className="text-sm text-blue-700 dark:text-blue-400">a.n. Tunggul Bayu Kusuma</p>
           </div>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Jenis Pembayaran</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Jenis Pembayaran</label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <button
             type="button"
@@ -140,7 +140,7 @@ export function PaymentForm({ member, onSubmit, onCancel }: PaymentFormProps) {
             className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
               type === 'dp'
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
           >
             DP
@@ -151,7 +151,7 @@ export function PaymentForm({ member, onSubmit, onCancel }: PaymentFormProps) {
             className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
               type === 'savings'
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
           >
             Nabung
@@ -165,7 +165,7 @@ export function PaymentForm({ member, onSubmit, onCancel }: PaymentFormProps) {
             className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
               type === 'full'
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
           >
             Pelunasan
@@ -174,7 +174,7 @@ export function PaymentForm({ member, onSubmit, onCancel }: PaymentFormProps) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Jumlah (Rp) *</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Jumlah (Rp) *</label>
         <input
           type="number"
           value={amount}
@@ -182,7 +182,7 @@ export function PaymentForm({ member, onSubmit, onCancel }: PaymentFormProps) {
           required
           min="1"
           placeholder="Contoh: 50000"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white dark:bg-gray-700 placeholder-gray-400 dark:placeholder-gray-500"
         />
         <div className="flex gap-2 mt-2 flex-wrap">
           {quickAmounts.map((quick) => (
@@ -190,7 +190,7 @@ export function PaymentForm({ member, onSubmit, onCancel }: PaymentFormProps) {
               key={quick.label}
               type="button"
               onClick={() => quick.value && setAmount(quick.value.toString())}
-              className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded text-xs font-medium transition-colors"
+              className="px-2 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded text-xs font-medium transition-colors"
             >
               {quick.label}
             </button>
@@ -199,30 +199,30 @@ export function PaymentForm({ member, onSubmit, onCancel }: PaymentFormProps) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal *</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tanggal *</label>
         <input
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
           required
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white dark:bg-gray-700"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Catatan (opsional)</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Catatan (opsional)</label>
         <input
           type="text"
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="Contoh: Transfer via BCA"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white dark:bg-gray-700 placeholder-gray-400 dark:placeholder-gray-500"
         />
       </div>
 
       {/* Upload Gambar */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Bukti Pembayaran (opsional)</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bukti Pembayaran (opsional)</label>
         
         {/* File Input */}
         <div className="relative">
@@ -238,20 +238,20 @@ export function PaymentForm({ member, onSubmit, onCancel }: PaymentFormProps) {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="w-full px-3 py-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-center"
+              className="w-full px-3 py-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-center"
             >
-              <svg className="w-6 h-6 mx-auto mb-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 mx-auto mb-1 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <span className="text-sm text-gray-600">Click untuk upload screenshot bukti transfer</span>
-              <p className="text-xs text-gray-400 mt-1">JPG, PNG, GIF (max 5MB)</p>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Click untuk upload screenshot bukti transfer</span>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">JPG, PNG, GIF (max 5MB)</p>
             </button>
           ) : (
             <div className="relative">
               <img
                 src={previewUrl}
                 alt="Preview"
-                className="w-full h-28 sm:h-32 object-contain border rounded-lg"
+                className="w-full h-28 sm:h-32 object-contain border border-gray-300 dark:border-gray-600 rounded-lg"
               />
               <button
                 type="button"
@@ -268,14 +268,14 @@ export function PaymentForm({ member, onSubmit, onCancel }: PaymentFormProps) {
 
         {/* Atau pakai Link */}
         <div className="mt-2">
-          <p className="text-xs text-gray-500 mb-1">Atau paste link:</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Atau paste link:</p>
           <input
             type="url"
             value={proof}
             onChange={(e) => setProof(e.target.value)}
             placeholder="https://drive.google.com/..."
             disabled={!!previewUrl}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 disabled:bg-gray-100 disabled:text-gray-400"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white dark:bg-gray-700 placeholder-gray-400 dark:placeholder-gray-500 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400"
           />
         </div>
       </div>
@@ -285,7 +285,7 @@ export function PaymentForm({ member, onSubmit, onCancel }: PaymentFormProps) {
           type="button"
           onClick={onCancel}
           disabled={uploading}
-          className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors disabled:opacity-50"
+          className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-colors disabled:opacity-50"
         >
           Batal
         </button>
