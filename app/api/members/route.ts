@@ -27,7 +27,13 @@ export async function GET() {
       }
 
       return {
-        ...member,
+        id: member.id,
+        name: member.name,
+        phone: member.phone ?? undefined,
+        target_amount: member.targetAmount,
+        dp_amount: member.dpAmount,
+        dp_paid: member.dpPaid,
+        created_at: member.createdAt.toISOString(),
         total_paid: totalPaid,
         remaining: Math.max(0, remaining),
         status,
