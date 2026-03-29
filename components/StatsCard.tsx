@@ -16,29 +16,29 @@ export function StatsCard({ stats }: StatsCardProps) {
     : 0;
 
   return (
-    <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-6 text-white shadow-lg">
-      <h2 className="text-xl font-bold mb-4">Ringkasan Villa Trip</h2>
+    <div className="bg-gradient-to-br from-blue-600 to-blue-800 dark:from-blue-800 dark:to-blue-950 rounded-2xl p-4 sm:p-6 text-white shadow-lg">
+      <h2 className="text-lg sm:text-xl font-bold mb-4">Ringkasan Villa Trip</h2>
       
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white/10 rounded-xl p-3">
+        <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
           <p className="text-blue-200 text-sm">Total Anggota</p>
           <p className="text-2xl font-bold">{stats.totalMembers}</p>
         </div>
-        <div className="bg-white/10 rounded-xl p-3">
+        <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
           <p className="text-blue-200 text-sm">Target Total</p>
-          <p className="text-lg font-bold">Rp {(stats.totalTarget / 1000000).toFixed(1)}M</p>
+          <p className="text-base sm:text-lg font-bold">Rp {stats.totalTarget.toLocaleString('id-ID')}</p>
         </div>
-        <div className="bg-white/10 rounded-xl p-3">
+        <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
           <p className="text-blue-200 text-sm">Terkumpul</p>
-          <p className="text-lg font-bold">Rp {(stats.totalCollected / 1000000).toFixed(1)}M</p>
+          <p className="text-base sm:text-lg font-bold">Rp {stats.totalCollected.toLocaleString('id-ID')}</p>
         </div>
-        <div className="bg-white/10 rounded-xl p-3">
+        <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
           <p className="text-blue-200 text-sm">Sudah Lunas</p>
           <p className="text-2xl font-bold">{stats.fullyPaid}</p>
         </div>
       </div>
 
-      <div className="bg-white/10 rounded-xl p-4">
+      <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
         <div className="flex justify-between text-sm mb-2">
           <span>Progress Pengumpulan</span>
           <span className="font-bold">{progress}%</span>

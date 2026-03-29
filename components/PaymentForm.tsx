@@ -11,7 +11,7 @@ interface PaymentFormProps {
 
 export function PaymentForm({ member, onSubmit, onCancel }: PaymentFormProps) {
   const [type, setType] = useState<'dp' | 'savings' | 'full'>('savings');
-  const [amount, setAmount] = useState(member.remaining.toString());
+  const [amount, setAmount] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [note, setNote] = useState('');
   const [proof, setProof] = useState('');
@@ -101,10 +101,39 @@ export function PaymentForm({ member, onSubmit, onCancel }: PaymentFormProps) {
   ];
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="space-y-4">
+      {/* Header with Close Button */}
+      <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900">Tambah Pembayaran - {member.name}</h3>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          aria-label="Tutup"
+        >
+          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      {/* BCA Bank Info */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <div className="flex items-start gap-2">
+          <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+          </svg>
+          <div>
+            <p className="text-sm font-semibold text-blue-800">Rekening BCA</p>
+            <p className="text-sm text-blue-700">a.n. Tunggul Bayu Kusuma</p>
+          </div>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Jenis Pembayaran</label>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <button
             type="button"
             onClick={() => setType('dp')}
@@ -129,7 +158,10 @@ export function PaymentForm({ member, onSubmit, onCancel }: PaymentFormProps) {
           </button>
           <button
             type="button"
-            onClick={() => setType('full')}
+            onClick={() => {
+              setType('full');
+              setAmount(member.remaining.toString());
+            }}
             className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
               type === 'full'
                 ? 'bg-blue-600 text-white'
@@ -149,6 +181,7 @@ export function PaymentForm({ member, onSubmit, onCancel }: PaymentFormProps) {
           onChange={(e) => setAmount(e.target.value)}
           required
           min="1"
+          placeholder="Contoh: 50000"
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
         />
         <div className="flex gap-2 mt-2 flex-wrap">
@@ -218,7 +251,7 @@ export function PaymentForm({ member, onSubmit, onCancel }: PaymentFormProps) {
               <img
                 src={previewUrl}
                 alt="Preview"
-                className="w-full h-32 object-contain border rounded-lg"
+                className="w-full h-28 sm:h-32 object-contain border rounded-lg"
               />
               <button
                 type="button"
@@ -274,6 +307,7 @@ export function PaymentForm({ member, onSubmit, onCancel }: PaymentFormProps) {
           )}
         </button>
       </div>
-    </form>
+      </form>
+    </div>
   );
 }

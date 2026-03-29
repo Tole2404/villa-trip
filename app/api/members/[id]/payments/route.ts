@@ -3,13 +3,13 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ memberId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { memberId } = await params;
+    const { id } = await params;
 
     const payments = await prisma.payment.findMany({
-      where: { memberId },
+      where: { memberId: id },
       orderBy: [
         { date: 'desc' },
         { createdAt: 'desc' },
@@ -25,16 +25,16 @@ export async function GET(
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ memberId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { memberId } = await params;
+    const { id } = await params;
     const { type, amount, date, note, proof } = await request.json();
 
     // Create payment
     const payment = await prisma.payment.create({
       data: {
-        memberId,
+        memberId: id,
         type,
         amount,
         date: new Date(date),
@@ -45,18 +45,18 @@ export async function POST(
 
     // Update dp_paid status
     const totalPaid = await prisma.payment.aggregate({
-      where: { memberId },
+      where: { memberId: id },
       _sum: { amount: true },
     });
 
     const member = await prisma.member.findUnique({
-      where: { id: memberId },
+      where: { id },
       select: { dpAmount: true },
     });
 
     if (member && totalPaid._sum.amount !== null) {
       await prisma.member.update({
-        where: { id: memberId },
+        where: { id },
         data: {
           dpPaid: totalPaid._sum.amount >= member.dpAmount,
         },
@@ -72,10 +72,10 @@ export async function POST(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ memberId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { memberId } = await params;
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const paymentId = searchParams.get('paymentId');
 
@@ -89,18 +89,18 @@ export async function DELETE(
 
     // Update dp_paid status
     const totalPaid = await prisma.payment.aggregate({
-      where: { memberId },
+      where: { memberId: id },
       _sum: { amount: true },
     });
 
     const member = await prisma.member.findUnique({
-      where: { id: memberId },
+      where: { id },
       select: { dpAmount: true },
     });
 
     if (member) {
       await prisma.member.update({
-        where: { id: memberId },
+        where: { id },
         data: {
           dpPaid: (totalPaid._sum.amount || 0) >= member.dpAmount,
         },

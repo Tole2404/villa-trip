@@ -141,7 +141,7 @@ export function MemberCard({ member, onUpdate, onDelete, onAddPayment, onDeleteP
             if (e.target === e.currentTarget) setShowPaymentForm(false);
           }}
         >
-          <div className="bg-white rounded-xl p-6 max-w-md w-full relative z-[101]">
+          <div className="bg-white rounded-xl p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-auto relative z-[101]">
             <h3 className="text-lg font-semibold mb-4">Tambah Pembayaran - {member.name}</h3>
             <PaymentForm
               member={member}
@@ -162,7 +162,7 @@ export function MemberCard({ member, onUpdate, onDelete, onAddPayment, onDeleteP
             if (e.target === e.currentTarget) setShowHistory(false);
           }}
         >
-          <div className="bg-white rounded-xl p-6 max-w-md w-full max-h-[80vh] overflow-auto relative z-[101]">
+          <div className="bg-white rounded-xl p-4 sm:p-6 w-full max-w-md md:max-w-2xl max-h-[85vh] overflow-auto relative z-[101]">
             <PaymentHistory
               member={member}
               onClose={() => setShowHistory(false)}
