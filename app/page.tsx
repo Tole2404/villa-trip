@@ -213,7 +213,7 @@ export default function Home() {
               </div>
               
               {/* Quick filter chips */}
-              <div className="flex gap-1.5 overflow-  x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+              <div className="flex gap-1.5 flex-wrap pb-1">
                 {filterButtons.map((btn) => (
                   <button
                     key={btn.key}
