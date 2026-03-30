@@ -29,7 +29,7 @@ export function MobileLayout({
       <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 px-4 py-3 sm:hidden">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-bold text-gray-900 dark:text-white">Villa Trip</h1>
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white">Villa Trip Family Gathering Maganghub</h1>
             <p className="text-xs text-gray-500 dark:text-gray-400">Manager</p>
           </div>
         </div>
@@ -41,7 +41,7 @@ export function MobileLayout({
           <div className="flex items-center gap-2">
             <span className="text-2xl">🏠</span>
             <div>
-              <h1 className="text-lg font-bold text-gray-900 dark:text-white">Villa Trip Manager</h1>
+              <h1 className="text-lg font-bold text-gray-900 dark:text-white">Villa Trip Family Gathering</h1>
               <p className="text-xs text-gray-500 dark:text-gray-400">Kelola anggota & pembayaran</p>
             </div>
           </div>
