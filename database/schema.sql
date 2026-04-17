@@ -41,3 +41,22 @@ SELECT
 FROM members m
 LEFT JOIN payments p ON m.id = p.member_id
 GROUP BY m.id;
+
+-- Create villa_pollings table for villa listings
+CREATE TABLE IF NOT EXISTS villa_pollings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  image_url TEXT,
+  capacity INTEGER NOT NULL DEFAULT 0,
+  facilities TEXT[],
+  description TEXT,
+  price INTEGER NOT NULL DEFAULT 0,
+  link TEXT,
+  location_link TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create index for active pollings
+CREATE INDEX IF NOT EXISTS idx_villa_pollings_active ON villa_pollings(is_active);

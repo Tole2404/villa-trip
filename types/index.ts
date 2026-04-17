@@ -26,3 +26,31 @@ export interface MemberWithStatus extends Member {
   remaining: number;
   status: PaymentStatus;
 }
+
+export interface VillaPolling {
+  id: string;
+  name: string;
+  imageUrls: string[];
+  capacity: number;
+  facilities: string[];
+  description?: string;
+  price: number;
+  link?: string;
+  locationLink?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PollingInput = Omit<VillaPolling, 'id' | 'createdAt' | 'updatedAt'>;
+
+export interface Vote {
+  id: string;
+  memberId: string;
+  villaId: string;
+  createdAt: string;
+  member?: {
+    id: string;
+    name: string;
+  };
+}
