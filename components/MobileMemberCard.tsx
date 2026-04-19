@@ -10,7 +10,7 @@ interface MobileMemberCardProps {
   onUpdate: (id: string, updates: { name: string; phone?: string; targetAmount: number; dpAmount: number }) => void;
   onDelete: (id: string) => void;
   onAddPayment: (memberId: string, payment: { type: 'dp' | 'savings' | 'full'; amount: number; date: string; note?: string }) => void;
-  onDeletePayment: (memberId: string, paymentId: string) => void;
+  onDeletePayment: (memberId: string, paymentId: string) => Promise<boolean>;
   getPayments: (memberId: string) => Promise<Payment[]>;
 }
 

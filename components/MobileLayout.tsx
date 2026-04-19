@@ -4,8 +4,8 @@ import { ReactNode } from 'react';
 
 interface MobileNavProps {
   children: ReactNode;
-  activeTab: 'home' | 'members' | 'itinerary' | 'stats' | 'polling';
-  onTabChange: (tab: 'home' | 'members' | 'itinerary' | 'stats' | 'polling') => void;
+  activeTab: 'home' | 'members' | 'itinerary' | 'stats' | 'polling' | 'calculator';
+  onTabChange: (tab: 'home' | 'members' | 'itinerary' | 'stats' | 'polling' | 'calculator') => void;
   onAddPress: () => void;
 }
 
@@ -15,12 +15,12 @@ export function MobileLayout({
   onTabChange,
   onAddPress
 }: MobileNavProps) {
-  const navItems: Array<{id: 'home' | 'members' | 'add' | 'itinerary' | 'stats' | 'polling', label: string, icon: string, isAction?: boolean}> = [
+  const navItems: Array<{id: 'home' | 'members' | 'add' | 'itinerary' | 'stats' | 'polling' | 'calculator', label: string, icon: string, isAction?: boolean}> = [
     { id: 'home', label: 'Beranda', icon: '🏠' },
     { id: 'members', label: 'Anggota', icon: '👥' },
     { id: 'add', label: 'Tambah', icon: '➕', isAction: true },
     { id: 'polling', label: 'Polling', icon: '🏡' },
-    { id: 'itinerary', label: 'Itinerary', icon: '📋' },
+    { id: 'calculator', label: 'Kalkulasi', icon: '🧮' },
     { id: 'stats', label: 'Statistik', icon: '📊' },
   ];
 
@@ -77,7 +77,7 @@ export function MobileLayout({
             return (
               <button
                 key={item.id}
-                onClick={() => item.id !== 'add' && onTabChange(item.id as 'home' | 'members' | 'itinerary' | 'stats' | 'polling')}
+                onClick={() => item.id !== 'add' && onTabChange(item.id as 'home' | 'members' | 'itinerary' | 'stats' | 'polling' | 'calculator')}
                 className="flex flex-col items-center justify-center py-1 px-3 min-w-[60px]"
               >
                 <span className={`text-2xl transition-transform ${isActive ? 'scale-110' : 'opacity-70'}`}>

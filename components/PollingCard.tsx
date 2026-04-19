@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { VillaPolling, Vote } from '@/types';
+import { PasswordModal, verifyPassword } from './PasswordModal';
 
 interface PollingCardProps {
   polling: VillaPolling;
@@ -125,7 +127,7 @@ export function PollingCard({ polling, votes = [], onManageVotes, onEdit, onDele
         </div>
 
         {/* Actions & Votes */}
-    <div className="pt-3 border-t border-gray-200 dark:border-gray-700 space-y-3">
+        <div className="pt-3 border-t border-gray-200 dark:border-gray-700 space-y-3">
           {/* Vote Info & Main Action */}
           <div className="flex items-center justify-between">
             <div className="flex -space-x-2">
@@ -164,50 +166,46 @@ export function PollingCard({ polling, votes = [], onManageVotes, onEdit, onDele
           </div>
 
           {/* Admin Tools Grid */}
-          <div className="grid grid-cols-4 gap-1.5 pt-2 border-t border-gray-100 dark:border-gray-700/50">
-          <Link
-            href={`/polling/${polling.id}`}
-            className={`flex-1 py-2 px-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors text-center ${
-              disabled ? 'opacity-60 pointer-events-none' : 'hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
-            aria-disabled={disabled}
-            tabIndex={disabled ? -1 : 0}
-          >
-            Lihat Detail
-          </Link>
-          <button
-            onClick={() => onEdit(polling)}
-            disabled={disabled}
-            className="flex-1 py-2 px-3 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
-          >
-            Edit
-          </button>
+          <div className="grid grid-cols-3 gap-1.5 pt-2 border-t border-gray-100 dark:border-gray-700/50">
+            <Link
+              href={`/polling/${polling.id}`}
+              className={`py-2 px-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors text-center ${
+                disabled ? 'opacity-60 pointer-events-none' : 'hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+            >
+              Detail
+            </Link>
+            <button
+              onClick={() => onEdit(polling)}
+              disabled={disabled}
+              className="py-2 px-3 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg text-sm font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => {
+                if (confirm('Yakin ingin menghapus villa ini?')) {
+                  onDelete(polling.id);
+                }
+              }}
+              disabled={disabled}
+              className="py-2 px-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
+            >
+              Hapus
+            </button>
+          </div>
+          
           <button
             onClick={() => onToggleActive(polling.id, !polling.isActive)}
             disabled={disabled}
-            className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
+            className={`w-full py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
               polling.isActive
                 ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-200 dark:hover:bg-yellow-900/50'
                 : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
-            } ${disabled ? 'opacity-60 cursor-not-allowed hover:bg-yellow-100 dark:hover:bg-yellow-900/30 hover:bg-green-100 dark:hover:bg-green-900/30' : ''}`}
+            } ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
           >
-            {polling.isActive ? 'Nonaktifkan' : 'Aktifkan'}
+            {polling.isActive ? 'Set Nonaktif' : 'Set Aktif'}
           </button>
-          <button
-            onClick={() => {
-              if (disabled) return;
-              if (confirm('Yakin ingin menghapus villa ini?')) {
-                onDelete(polling.id);
-              }
-            }}
-            disabled={disabled}
-              className="py-2 px-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-sm font-medium hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors flex items-center justify-center"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
-          </div>
         </div>
       </div>
     </div>

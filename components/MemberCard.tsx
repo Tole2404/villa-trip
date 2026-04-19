@@ -5,13 +5,14 @@ import { MemberWithStatus, Payment } from '@/types';
 import { MemberForm } from './MemberForm';
 import { PaymentForm } from './PaymentForm';
 import { PaymentHistory } from './PaymentHistory';
+import { PasswordModal, verifyPassword } from './PasswordModal';
 
 interface MemberCardProps {
   member: MemberWithStatus;
   onUpdate: (id: string, updates: { name: string; phone?: string; targetAmount: number; dpAmount: number }) => void;
   onDelete: (id: string) => void;
   onAddPayment: (memberId: string, payment: { type: 'dp' | 'savings' | 'full'; amount: number; date: string; note?: string }) => void;
-  onDeletePayment: (memberId: string, paymentId: string) => void;
+  onDeletePayment: (memberId: string, paymentId: string) => Promise<boolean>;
   getPayments: (memberId: string) => Promise<Payment[]>;
 }
 
@@ -26,13 +27,25 @@ export function MemberCard({ member, onUpdate, onDelete, onAddPayment, onDeleteP
   const [isEditing, setIsEditing] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [pendingEditData, setPendingEditData] = useState<null | { name: string; phone?: string; target_amount: number; dp_amount: number }>(null);
 
   const progress = Math.min(100, (member.total_paid / member.target_amount) * 100);
   const status = statusLabels[member.status];
 
   if (isEditing) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 relative">
+        {isUpdating && (
+          <div className="absolute inset-0 z-10 bg-white/60 backdrop-blur-[1px] rounded-xl flex items-center justify-center">
+            <div className="flex items-center gap-3 px-4 py-3 bg-white border border-gray-200 rounded-xl shadow">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+              <span className="text-sm font-medium text-gray-700">Menyimpan...</span>
+            </div>
+          </div>
+        )}
         <MemberForm
           initialData={{
             name: member.name,
@@ -40,16 +53,51 @@ export function MemberCard({ member, onUpdate, onDelete, onAddPayment, onDeleteP
             target_amount: member.target_amount,
             dp_amount: member.dp_amount,
           }}
-          onSubmit={(data: { name: string; phone?: string; target_amount: number; dp_amount: number }) => {
-            onUpdate(member.id, {
-              name: data.name,
-              phone: data.phone,
-              targetAmount: data.target_amount,
-              dpAmount: data.dp_amount,
-            });
-            setIsEditing(false);
+          onSubmit={async (data: { name: string; phone?: string; target_amount: number; dp_amount: number }) => {
+            setPendingEditData(data);
+            setShowPasswordModal(true);
           }}
           onCancel={() => setIsEditing(false)}
+          disabled={isUpdating}
+        />
+
+        {/* Password Modal for Edit */}
+        <PasswordModal
+          isOpen={showPasswordModal}
+          onClose={() => {
+            setShowPasswordModal(false);
+            setPasswordError('');
+            setPendingEditData(null);
+          }}
+          onSubmit={(password) => {
+            if (!verifyPassword(password)) {
+              setPasswordError('Password salah!');
+              return;
+            }
+            setPasswordError('');
+            setShowPasswordModal(false);
+
+            if (pendingEditData) {
+              setIsUpdating(true);
+              try {
+                onUpdate(member.id, {
+                  name: pendingEditData.name,
+                  phone: pendingEditData.phone,
+                  targetAmount: pendingEditData.target_amount,
+                  dpAmount: pendingEditData.dp_amount,
+                });
+                setIsEditing(false);
+              } catch (error) {
+                console.error('Error updating member:', error);
+                alert('Gagal menyimpan perubahan. Coba lagi ya.');
+              } finally {
+                setIsUpdating(false);
+              }
+              setPendingEditData(null);
+            }
+          }}
+          title="Verifikasi Password"
+          error={passwordError}
         />
       </div>
     );
@@ -124,9 +172,7 @@ export function MemberCard({ member, onUpdate, onDelete, onAddPayment, onDeleteP
         </button>
         <button
           onClick={() => {
-            if (confirm('Yakin mau hapus anggota ini?')) {
-              onDelete(member.id);
-            }
+            setShowPasswordModal(true);
           }}
           className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-medium transition-colors"
         >
@@ -180,6 +226,29 @@ export function MemberCard({ member, onUpdate, onDelete, onAddPayment, onDeleteP
           </div>
         </div>
       )}
+
+      {/* Password Modal for Delete */}
+      <PasswordModal
+        isOpen={showPasswordModal && !pendingEditData}
+        onClose={() => {
+          setShowPasswordModal(false);
+          setPasswordError('');
+        }}
+        onSubmit={(password) => {
+          if (!verifyPassword(password)) {
+            setPasswordError('Password salah!');
+            return;
+          }
+          setPasswordError('');
+          setShowPasswordModal(false);
+          // Delete action
+          if (confirm('Yakin mau hapus anggota ini?')) {
+            onDelete(member.id);
+          }
+        }}
+        title="Verifikasi Password"
+        error={passwordError}
+      />
     </div>
   );
 }
