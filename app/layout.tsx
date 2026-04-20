@@ -15,11 +15,21 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Villa Trip Manager",
-  description: "Kelola anggota, DP, dan pembayaran untuk acara villa",
+  title: "Villa Trip Manager 😼",
+  description: "Kelola anggota, DP, dan pembayaran untuk acara villa Maganghub Family Gathering",
   manifest: "/manifest.json",
   themeColor: "#4f46e5",
   viewport: "width=device-width, initial-scale=1, maximum-scale=1",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/icons/icon-192x192.png",
+  },
+  openGraph: {
+    title: "Villa Trip Manager 😼",
+    description: "Cek progres pembayaran dan pengeluaran trip villa kita di sini!",
+    images: [{ url: "/logo.png" }],
+    type: 'website'
+  }
 };
 
 export default function RootLayout({
