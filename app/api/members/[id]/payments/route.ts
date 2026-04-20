@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { sendPushNotification } from '@/lib/push';
 
 export async function GET(
   request: Request,
@@ -61,6 +62,23 @@ export async function POST(
           dpPaid: totalPaid._sum.amount >= member.dpAmount,
         },
       });
+    }
+
+    // Send Push Notification
+    try {
+      const fullMember = await prisma.member.findUnique({
+        where: { id },
+        select: { name: true }
+      });
+
+      if (fullMember) {
+        await sendPushNotification(
+          '💰 Pembayaran Masuk!',
+          `${fullMember.name} baru saja membayar Rp ${amount.toLocaleString('id-ID')}`
+        );
+      }
+    } catch (e) {
+      console.error('Push error:', e);
     }
 
     return NextResponse.json(payment, { status: 201 });

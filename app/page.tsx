@@ -13,6 +13,10 @@ import { PollingCard } from '@/components/PollingCard';
 import { PollingForm } from '@/components/PollingForm';
 import { PasswordModal } from '@/components/PasswordModal';
 import { TripCalculator } from '@/components/TripCalculator';
+import { Monitoring, MonitoringSummary } from '@/components/Monitoring';
+import { TripExpenses } from '@/components/TripExpenses';
+import { useExpenses } from '@/hooks/useExpenses';
+import { NotificationBell } from '@/components/NotificationBell';
 import { VillaPolling, PollingInput, Vote } from '@/types';
 
 function HomeContent() {
@@ -20,14 +24,17 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
-  const tabParam = searchParams.get('tab') as 'home' | 'members' | 'itinerary' | 'stats' | 'polling' | 'calculator' | null;
+  const tabParam = searchParams.get('tab') as 'home' | 'members' | 'itinerary' | 'stats' | 'polling' | 'calculator' | 'monitoring' | 'expenses' | null;
   const { members, loaded, addMember, updateMember, deleteMember, addPayment, deletePayment, getPayments, stats } = useMembers();
   const [showAddForm, setShowAddForm] = useState(false);
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [showItinerary, setShowItinerary] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<null | (() => void)>(null);
-  const [activeTab, setActiveTabState] = useState<'home' | 'members' | 'itinerary' | 'stats' | 'polling' | 'calculator'>(tabParam || 'home');
+  const [activeTab, setActiveTabState] = useState<'home' | 'members' | 'itinerary' | 'stats' | 'polling' | 'calculator' | 'monitoring' | 'expenses'>(tabParam || 'home');
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [showExpensePopup, setShowExpensePopup] = useState(false);
+  const { totalSpent, expenses } = useExpenses();
   const [isPending, startTransition] = useTransition();
   const [isMounted, setIsMounted] = useState(false);
 
@@ -45,10 +52,10 @@ function HomeContent() {
 
   const setActiveTab = (tab: typeof activeTab) => {
     if (tab === activeTab || !isMounted) return;
-    
+
     // Update local state immediately for snappy UI
     setActiveTabState(tab);
-    
+
     startTransition(() => {
       const params = new URLSearchParams(window.location.search);
       if (tab === 'home') {
@@ -56,10 +63,10 @@ function HomeContent() {
       } else {
         params.set('tab', tab);
       }
-      
+
       const queryString = params.toString();
       const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
-      router.replace(newUrl, { scroll: false });
+      router.push(newUrl, { scroll: false });
     });
   };
 
@@ -120,23 +127,34 @@ function HomeContent() {
   // Render content based on active tab
   const renderContent = () => {
     switch (activeTab) {
+      case 'expenses':
+        if (!isAdminAuthenticated) return <AdminLock onUnlock={() => setIsAdminAuthenticated(true)} />;
+        return <TripExpenses totalCollected={stats.totalCollected} onClose={() => setActiveTab('home')} />;
+
       case 'calculator':
         return (
           <TripCalculator
             totalTarget={stats.totalTarget}
             totalCollected={stats.totalCollected}
             memberCount={members.length}
+            onClose={() => setActiveTab('home')}
           />
         );
 
+      case 'monitoring':
+        return <Monitoring />;
+
       case 'polling':
-        return <PollingDashboard />;
+        return <PollingDashboard isAdminAuthenticated={isAdminAuthenticated} onUnlock={() => setIsAdminAuthenticated(true)} />;
 
       case 'stats':
         return (
           <div className="space-y-4">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Statistik Trip</h2>
-            <StatsCard stats={stats} />
+            <StatsCard
+              stats={{ ...stats, totalSpent }}
+              onShowExpenses={() => setShowExpensePopup(true)}
+            />
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
               <h3 className="font-semibold text-gray-900 mb-3">Ringkasan Pembayaran</h3>
               <div className="space-y-2 text-sm">
@@ -168,9 +186,12 @@ function HomeContent() {
         return (
           <>
             {/* Members-only view - No stats, just members */}
-            <div className="mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Daftar Anggota ({sortedMembers.length})</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Kelola pembayaran dan status anggota</p>
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Daftar Anggota ({sortedMembers.length})</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Kelola pembayaran dan status anggota</p>
+              </div>
+              <NotificationBell />
             </div>
 
             {/* Search & Filter */}
@@ -275,39 +296,66 @@ function HomeContent() {
         return (
           <>
             {/* Home view - Full overview with stats */}
-            <div className="mb-4">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Villa Trip</h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{members.length} anggota • Rp {(stats.totalCollected / 1000000).toFixed(1)}M terkumpul</p>
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Halo, Cikkk! 😼</h1>
+                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Cek progres villa trip kita di sini.</p>
+              </div>
+              <NotificationBell />
             </div>
 
-            {/* Stats Card */}
+            {/* Highlight Progress (Hanya yang sudah diceklis) */}
+            <div className="mb-6 cursor-pointer active:scale-95 transition-all" onClick={() => setActiveTab('monitoring')}>
+              <h2 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-tighter mb-3 flex items-center gap-2">
+                <span className="w-1.5 h-4 bg-indigo-600 rounded-full"></span>
+                Milestone Persiapan
+              </h2>
+              <MonitoringSummary />
+              <p className="text-[9px] text-slate-500 text-center mt-2 italic">Ketuk untuk kelola semua persiapan →</p>
+            </div>
+
             <div className="mb-4">
-              <StatsCard stats={stats} />
+              <StatsCard
+                stats={{ ...stats, totalSpent }}
+                onShowExpenses={() => setShowExpensePopup(true)}
+              />
             </div>
 
             {/* Quick Actions */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+            <div className="grid grid-cols-3 gap-2 mb-4">
               <button
                 onClick={() => setActiveTab('members')}
-                className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2"
+                className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 shadow-lg shadow-blue-500/10 active:scale-95 transition-all"
               >
                 <span>👥</span> Anggota
               </button>
               <button
-                onClick={() => setActiveTab('polling')}
-                className="bg-green-600 hover:bg-green-700 text-white p-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2"
+                onClick={() => setActiveTab('expenses')}
+                className="bg-rose-600 hover:bg-rose-700 text-white p-3 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 shadow-lg shadow-rose-500/10 active:scale-95 transition-all"
               >
-                <span>🏡</span> Polling
+                <span>💰</span> Pengeluaran
               </button>
               <button
                 onClick={() => setActiveTab('calculator')}
-                className="bg-orange-600 hover:bg-orange-700 text-white p-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2"
+                className="bg-orange-600 hover:bg-orange-700 text-white p-3 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 shadow-lg shadow-orange-500/10 active:scale-95 transition-all"
               >
                 <span>🧮</span> Kalkulasi
               </button>
               <button
+                onClick={() => setActiveTab('polling')}
+                className="bg-green-600 hover:bg-green-700 text-white p-3 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 shadow-lg shadow-green-500/10 active:scale-95 transition-all"
+              >
+                <span>🏡</span> Polling
+              </button>
+              <button
+                onClick={() => setActiveTab('monitoring')}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 shadow-lg shadow-indigo-500/10 active:scale-95 transition-all"
+              >
+                <span>📋</span> Checklist
+              </button>
+              <button
                 onClick={() => setActiveTab('stats')}
-                className="bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2"
+                className="bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 shadow-lg shadow-purple-500/10 active:scale-95 transition-all"
               >
                 <span>📊</span> Statistik
               </button>
@@ -371,6 +419,58 @@ function HomeContent() {
       onAddPress={() => setShowAddForm(true)}
     >
       {renderContent()}
+
+      {/* Expense Details Popup */}
+      {showExpensePopup && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in transition-all">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in slide-in-from-bottom-10">
+            <div className="p-6 pb-2 flex justify-between items-center border-b border-white/5 bg-white/[0.02]">
+              <div>
+                <h3 className="text-sm font-black uppercase tracking-widest text-white">Rincian Dana Keluar</h3>
+                <p className="text-[10px] text-rose-400 font-bold tracking-tight">TOTAL: Rp {totalSpent.toLocaleString('id-ID')}</p>
+              </div>
+              <button onClick={() => setShowExpensePopup(false)} className="w-10 h-10 flex items-center justify-center bg-slate-800 rounded-2xl text-slate-400 hover:text-white transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            <div className="p-6 max-h-[60vh] overflow-y-auto no-scrollbar space-y-3">
+              {expenses.length === 0 ? (
+                <div className="py-12 text-center">
+                  <p className="text-slate-500 text-xs italic">Belum ada rincian pengeluaran.</p>
+                </div>
+              ) : (
+                [...expenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((e) => (
+                  <div key={e.id} className="flex items-center justify-between p-4 bg-white/[0.03] border border-white/5 rounded-2xl">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-xs">
+                        {e.category === 'villa' ? '🏡' : e.category === 'transport' ? '🚗' : e.category === 'konsumsi' ? '🍽️' : '📦'}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-white leading-tight">{e.name || 'Tanpa Keterangan'}</p>
+                        <p className="text-[9px] text-slate-500 uppercase tracking-widest mt-0.5">{new Date(e.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} • {e.category}</p>
+                      </div>
+                    </div>
+                    <p className="text-sm font-black text-rose-400">-{e.amount.toLocaleString('id-ID')}</p>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="p-6 pt-0">
+              <button
+                onClick={() => {
+                  setShowExpensePopup(false);
+                  setActiveTab('expenses');
+                }}
+                className="w-full bg-slate-800 text-white/70 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-slate-700 transition-all active:scale-95 border border-white/5"
+              >
+                Kelola Semua Pengeluaran →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add Member Modal */}
       {showAddForm && (
@@ -441,8 +541,50 @@ function HomeContent() {
   );
 }
 
+function AdminLock({ onUnlock }: { onUnlock: () => void }) {
+  const [passwordInput, setPasswordInput] = useState('');
+
+  return (
+    <div className="flex flex-col items-center justify-center py-16 px-4 animate-in fade-in zoom-in-95 duration-500">
+      <div className="bg-white dark:bg-gray-800 p-8 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-gray-100 dark:border-gray-700 text-center relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-8 opacity-5">
+          <svg className="w-24 h-24" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z" /></svg>
+        </div>
+
+        <div className="w-20 h-20 bg-blue-600/10 text-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-500/10">
+          <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+        </div>
+
+        <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Akses Terkunci</h2>
+        <p className="text-gray-500 dark:text-gray-400 mb-8 text-sm font-medium">Hanya panitia inti yang bisa akses keuangan & polling.</p>
+
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          if (passwordInput === 'toleganteng') onUnlock();
+          else {
+            alert('Password salah!');
+            setPasswordInput('');
+          }
+        }} className="space-y-4">
+          <input
+            type="password"
+            placeholder="Password Admin"
+            value={passwordInput}
+            onChange={(e) => setPasswordInput(e.target.value)}
+            className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-2 border-transparent focus:border-blue-500 dark:focus:border-blue-400 rounded-2xl outline-none text-center font-black tracking-[0.5em] text-lg transition-all"
+            autoFocus
+          />
+          <button type="submit" className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl transition-all active:scale-95 shadow-xl shadow-blue-500/20 uppercase tracking-widest text-xs">
+            Buka Akses
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // Polling Dashboard Component moved out of HomeContent
-function PollingDashboard() {
+function PollingDashboard({ isAdminAuthenticated, onUnlock }: { isAdminAuthenticated: boolean, onUnlock: () => void }) {
   const router = useRouter();
   const [pollings, setPollings] = useState<VillaPolling[]>([]);
   const [votes, setVotes] = useState<Vote[]>([]);
@@ -451,8 +593,6 @@ function PollingDashboard() {
   const [showPollingForm, setShowPollingForm] = useState(false);
   const [editingPolling, setEditingPolling] = useState<VillaPolling | null>(null);
   const [managingVotes, setManagingVotes] = useState<VillaPolling | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [passwordInput, setPasswordInput] = useState('');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -578,39 +718,8 @@ function PollingDashboard() {
     setEditingPolling(null);
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 px-4">
-        <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100 dark:border-gray-700 text-center animate-fade-in">
-          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-          </div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Akses Terkunci</h2>
-          <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm">Masukkan password admin untuk mengelola polling & villa.</p>
-
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            if (passwordInput === 'toleganteng') setIsAuthenticated(true);
-            else {
-              alert('Password salah!');
-              setPasswordInput('');
-            }
-          }} className="space-y-4">
-            <input
-              type="password"
-              placeholder="Password"
-              value={passwordInput}
-              onChange={(e) => setPasswordInput(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-center font-medium"
-              autoFocus
-            />
-            <button type="submit" className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors active:scale-95">
-              Buka Kunci
-            </button>
-          </form>
-        </div>
-      </div>
-    );
+  if (!isAdminAuthenticated) {
+    return <AdminLock onUnlock={onUnlock} />;
   }
 
   if (loading) {
