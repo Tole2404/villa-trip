@@ -121,15 +121,16 @@ export function PaymentForm({ member, onSubmit, onCancel }: PaymentFormProps) {
         </button>
       </div>
 
-      {/* BCA Bank Info */}
+      {/* DANA Info */}
       <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
         <div className="flex items-start gap-2">
           <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
           </svg>
           <div>
-            <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">Rekening BCA</p>
-            <p className="text-sm text-blue-700 dark:text-blue-400">a.n. Tunggul Bayu Kusuma</p>
+            <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">DANA</p>
+            <p className="text-sm text-blue-700 dark:text-blue-400 font-mono">087720912755</p>
+            <p className="text-[10px] text-blue-600 dark:text-blue-500 font-bold uppercase">a.n. Tunggul Bayu Kusuma</p>
           </div>
         </div>
       </div>
@@ -219,7 +220,7 @@ export function PaymentForm({ member, onSubmit, onCancel }: PaymentFormProps) {
           type="text"
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder="Contoh: Transfer via BCA"
+          placeholder="Contoh: Transfer via DANA"
           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white dark:bg-gray-700 placeholder-gray-400 dark:placeholder-gray-500"
         />
       </div>
