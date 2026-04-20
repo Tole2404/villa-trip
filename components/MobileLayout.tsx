@@ -18,7 +18,9 @@ export function MobileLayout({
   const navItems: Array<{id: 'home' | 'members' | 'add' | 'itinerary' | 'stats' | 'polling' | 'calculator' | 'monitoring' | 'expenses', label: string, icon: string, isAction?: boolean}> = [
     { id: 'home', label: 'Beranda', icon: '🏠' },
     { id: 'members', label: 'Anggota', icon: '👥' },
+    { id: 'calculator', label: 'Kalkulasi', icon: '🧮' },
     { id: 'add', label: 'Tambah', icon: '➕', isAction: true },
+    { id: 'polling', label: 'Polling', icon: '🏡' },
     { id: 'monitoring', label: 'Monitoring', icon: '📋' },
     { id: 'expenses', label: 'Pengeluaran', icon: '💰' },
   ];
@@ -77,12 +79,12 @@ export function MobileLayout({
               <button
                 key={item.id}
                 onClick={() => item.id !== 'add' && onTabChange(item.id as 'home' | 'members' | 'itinerary' | 'stats' | 'polling' | 'calculator' | 'monitoring' | 'expenses')}
-                className="flex flex-col items-center justify-center py-1 px-3 min-w-[60px]"
+                className="flex flex-col items-center justify-center py-1 px-1 min-w-[45px] flex-1"
               >
-                <span className={`text-2xl transition-transform ${isActive ? 'scale-110' : 'opacity-70'}`}>
+                <span className={`text-xl transition-transform ${isActive ? 'scale-110' : 'opacity-70'}`}>
                   {item.icon}
                 </span>
-                <span className={`text-xs mt-0.5 font-medium ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                <span className={`text-[9px] mt-0.5 font-bold leading-tight ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}>
                   {item.label}
                 </span>
               </button>
