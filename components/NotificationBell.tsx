@@ -34,14 +34,35 @@ export function NotificationBell() {
     }
   };
 
+  function urlBase64ToUint8Array(base64String: string) {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
+
   const subscribeToPush = async () => {
     try {
       setIsSubscribing(true);
+      
+      if (!('serviceWorker' in navigator)) {
+        throw new Error('Browser tidak mendukung Service Worker');
+      }
+
       const registration = await navigator.serviceWorker.ready;
       
+      const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      if (!publicKey) {
+        throw new Error('VAPID Public Key tidak ditemukan di environment');
+      }
+
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+        applicationServerKey: urlBase64ToUint8Array(publicKey)
       });
 
       const res = await fetch('/api/push/subscribe', {
@@ -54,11 +75,16 @@ export function NotificationBell() {
         setIsSubscribed(true);
         alert('Notifikasi HP berhasil diaktifkan! 😼🔥');
       } else {
-        throw new Error('Gagal menyimpan subscription');
+        const errData = await res.json();
+        throw new Error(errData.error || 'Gagal menyimpan ke server');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Push subscription failed:', error);
-      alert('Gagal mengaktifkan notifikasi. Pastikan kamu sudah mengizinkan notifikasi di browser.');
+      if (error.name === 'NotAllowedError') {
+        alert('Izin ditolak! Harap izinkan notifikasi di pengaturan browser kamu (klik icon gembok di alamat web).');
+      } else {
+        alert(`Gagal: ${error.message || 'Cek koneksi atau izin browser'}`);
+      }
     } finally {
       setIsSubscribing(false);
     }
