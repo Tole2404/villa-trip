@@ -119,7 +119,7 @@ function HomeContent() {
   const filterButtons = [
     { key: 'all', label: 'Semua', count: members.length },
     { key: 'pending', label: 'Belum DP', count: members.filter(m => m.status === 'pending').length },
-    { key: 'dp', label: 'DP Only', count: members.filter(m => m.status === 'dp_only').length },
+    { key: 'dp', label: 'Sudah DP', count: members.filter(m => m.status === 'dp').length },
     { key: 'savings', label: 'Nabung', count: members.filter(m => m.status === 'savings').length },
     { key: 'completed', label: 'Lunas', count: members.filter(m => m.status === 'completed').length },
   ] as const;
@@ -374,7 +374,7 @@ function HomeContent() {
                       <p className="text-xs text-gray-500 dark:text-gray-400">
                         {member.status === 'completed' ? '✅ Lunas' :
                           member.status === 'pending' ? '⚠️ Belum DP' :
-                            member.status === 'dp_only' ? '💰 DP Only' : '💵 Nabung'}
+                            member.status === 'dp' ? '💰 Sudah DP' : '💵 Nabung'}
                       </p>
                     </div>
                     <div className="text-right">

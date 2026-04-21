@@ -19,7 +19,7 @@ export interface Member {
   created_at: string;
 }
 
-export type PaymentStatus = 'pending' | 'dp_only' | 'savings' | 'completed';
+export type PaymentStatus = 'pending' | 'dp' | 'savings' | 'completed';
 
 export interface MemberWithStatus extends Member {
   total_paid: number;
