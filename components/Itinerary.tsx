@@ -21,6 +21,7 @@ export function Itinerary({ onClose, isAdmin = false }: ItineraryProps) {
   const [note, setNote] = useState('');
 
   const dayItems = items.filter(i => i.day === activeDay).sort((a, b) => a.time.localeCompare(b.time));
+  const nextOrder = dayItems.length > 0 ? Math.max(...dayItems.map((i) => i.order ?? 0)) + 1 : 0;
 
   // Helper to convert time string (HH:MM) to minutes
   const timeToMinutes = (time: string) => {
@@ -65,6 +66,8 @@ export function Itinerary({ onClose, isAdmin = false }: ItineraryProps) {
       time: timeString,
       activity: activity.trim(),
       note: note.trim() || undefined,
+      icon: '🗓️',
+      order: nextOrder,
     });
     setActivity('');
     setNote('');
