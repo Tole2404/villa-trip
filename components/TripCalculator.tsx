@@ -180,30 +180,34 @@ export function TripCalculator({ totalCollected, memberCount, onClose }: TripCal
 
   const generateConsumptionWSMessage = () => {
     const categories = [
-      { id: 'makan', title: '🟢 MAKAN BERAT' },
-      { id: 'minuman', title: '🔵 MINUMAN' },
-      { id: 'snack', title: '🟡 SNACK / CEMILAN' },
-      { id: 'bumbu', title: '🔴 BUMBU & BAHAN' }
+      { id: 'makan', title: 'MAKAN BERAT' },
+      { id: 'minuman', title: 'MINUMAN' },
+      { id: 'snack', title: 'SNACK / CEMILAN' },
+      { id: 'bumbu', title: 'BUMBU & BAHAN' }
     ] as const;
 
-    let message = `*RINCIAN LIST BELANJA KONSUMSI* 🛒🍱\n_Family Gathering Maganghub_ 😼\n\n`;
+    let message = `*RINCIAN LIST BELANJA KONSUMSI*\nFamily Gathering Maganghub\n\n`;
 
     categories.forEach(cat => {
       const items = consumptionItems.filter(i => i.category === cat.id);
       if (items.length > 0) {
-        message += `${cat.title} 📋:\n`;
+        message += `*${cat.title}*\n`;
         items.forEach(item => {
-          message += `- ${item.name} 🛍️\n  (${item.quantity} ${item.unit}) @${formatRp(item.price).replace('Rp ', '')}\n`;
+          const qty = item.quantity || 0;
+          const unit = item.unit || '';
+          const price = formatRp(item.price).replace('Rp ', '');
+          const total = formatRp(item.quantity * item.price).replace('Rp ', '');
+          message += `- ${item.name}\n  ${qty} ${unit} x ${price} = ${total}\n`;
         });
         const catTotal = items.reduce((sum, i) => sum + (i.quantity * i.price), 0);
-        message += `*Subtotal:* ${formatRp(catTotal)} 💸\n\n`;
+        message += `Subtotal ${cat.title}: ${formatRp(catTotal)}\n\n`;
       }
     });
 
     message += `---------------------------\n`;
-    message += `💰 *TOTAL KONSUMSI:* ${formatRp(totalConsumptionCost)} ✨\n`;
+    message += `TOTAL KONSUMSI: ${formatRp(totalConsumptionCost)}\n`;
     message += `---------------------------\n\n`;
-    message += `_Yuk gercep kumpulin dananya Kawannn_ 😹🚀`;
+    message += `Dikirim via Villa Trip Manager`;
 
     return message.trim();
   };

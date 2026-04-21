@@ -217,10 +217,10 @@ export function Itinerary({ onClose, isAdmin = false }: ItineraryProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-[#0f172a] flex items-center justify-center p-3 sm:p-4 z-50">
-      <div className="w-full max-w-6xl bg-[#1e293b] rounded-2xl overflow-hidden shadow-2xl max-h-[92vh] sm:max-h-none flex flex-col">
+    <div className="w-full bg-[#0f172a] rounded-2xl overflow-hidden shadow-2xl">
+      <div className="w-full max-w-6xl mx-auto bg-[#1e293b] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-4 sm:py-5 border-b border-gray-700">
+        <div className="sticky top-0 z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-4 sm:py-5 border-b border-gray-700 bg-[#1e293b]">
           <div className="flex items-center gap-3 sm:gap-6 flex-wrap">
             <h2 className="text-white font-bold tracking-wider text-sm">TRIP RUNDOWN</h2>
             <div className="flex rounded-lg overflow-hidden">
@@ -271,9 +271,9 @@ export function Itinerary({ onClose, isAdmin = false }: ItineraryProps) {
         </div>
 
         {/* Main Content */}
-        <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
+        <div className="flex flex-col lg:flex-row flex-1">
           {/* Left Side - Add Form */}
-          <div className="w-full lg:w-80 p-4 sm:p-6 border-b lg:border-b-0 lg:border-r border-gray-700 overflow-y-auto">
+          <div className="w-full lg:w-80 p-4 sm:p-6 border-b lg:border-b-0 lg:border-r border-gray-700">
             <h3 className="text-xs font-bold text-gray-400 tracking-wider mb-6">ADD NEW SLOT</h3>
             
             <div className="space-y-5">
@@ -347,7 +347,7 @@ export function Itinerary({ onClose, isAdmin = false }: ItineraryProps) {
           </div>
 
           {/* Right Side - Schedule Table */}
-          <div className="flex-1 p-4 sm:p-6 overflow-y-auto" ref={scheduleRef}>
+          <div className="flex-1 p-4 sm:p-6" ref={scheduleRef}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xs font-bold text-gray-400 tracking-wider">
                 SCHEDULE — HARI {activeDay === 1 ? '01' : '02'}
@@ -355,84 +355,60 @@ export function Itinerary({ onClose, isAdmin = false }: ItineraryProps) {
               <span className="text-xs text-gray-500">{dayItems.length} slot</span>
             </div>
 
-            {/* Table Header */}
-            <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-3 bg-gray-800/50 rounded-t-lg text-xs font-medium text-gray-400">
-              <div className="col-span-2">WAKTU</div>
-              <div className="col-span-4">KEGIATAN</div>
-              <div className="col-span-5">CATATAN</div>
-              <div className="col-span-1"></div>
-            </div>
-
-            {/* Table Body */}
-            <div className="space-y-2 sm:space-y-1">
-              {dayItems.length === 0 ? (
-                <div className="px-4 py-8 text-center text-gray-500 text-sm">
-                  Belum ada kegiatan. Tambahkan slot baru di sebelah kiri.
-                </div>
-              ) : (
-                dayItems.map((item, index) => (
-                  <div key={item.id}>
-                    {/* Mobile card */}
-                    <div className="sm:hidden bg-gray-800/30 hover:bg-gray-800/50 rounded-lg p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="text-blue-400 font-semibold text-sm">
-                            {item.time.includes(' - ') ? item.time.split(' - ')[0] : item.time}
-                          </div>
-                          {item.time.includes(' - ') && (
-                            <div className="text-[11px] text-gray-500 font-medium">s/d {item.time.split(' - ')[1]}</div>
-                          )}
-                        </div>
-                        <button
-                          onClick={() => {
-                            if (confirm(`Yakin hapus \"${item.activity}\"?`)) {
-                              deleteItem(item.id);
-                            }
-                          }}
-                          className="text-red-500 hover:text-red-400 text-xs font-medium transition-colors px-2 py-1 rounded hover:bg-red-500/10 flex-shrink-0"
-                          title="Hapus kegiatan"
-                        >
-                          DEL
-                        </button>
-                      </div>
-
-                      <div className="mt-3">
-                        <div className="text-white font-medium text-sm break-words">{item.activity}</div>
-                        <div className="text-gray-400 text-xs mt-1 break-words">{item.note || '-'}</div>
-                      </div>
-                    </div>
-
-                    {/* Desktop/table row */}
-                    <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-4 bg-gray-800/30 hover:bg-gray-800/50 rounded-lg items-center text-sm">
-                      <div className="col-span-2 text-blue-400 font-semibold flex flex-col gap-0.5">
-                        {item.time.includes(' - ') ? (
-                          <>
-                            <span>{item.time.split(' - ')[0]}</span>
-                            <span className="text-[10px] text-gray-500 font-medium">s/d {item.time.split(' - ')[1]}</span>
-                          </>
-                        ) : (
-                          <span>{item.time}</span>
-                        )}
-                      </div>
-                      <div className="col-span-4 text-white font-medium break-words">{item.activity}</div>
-                      <div className="col-span-5 text-gray-400 text-xs break-words">{item.note || '-'}</div>
-                      <div className="col-span-1 flex justify-end">
-                        <button
-                          onClick={() => {
-                            if (confirm(`Yakin hapus "${item.activity}"?`)) {
-                              deleteItem(item.id);
-                            }
-                          }}
-                          className="text-red-500 hover:text-red-400 text-xs font-medium transition-colors px-2 py-1 rounded hover:bg-red-500/10"
-                          title="Hapus kegiatan"
-                        >
-                          DEL
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
+            <div className="bg-gray-800/30 rounded-lg border border-gray-700/60 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[520px] text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-800/60 text-xs font-medium text-gray-400">
+                      <th className="px-4 py-3 w-[140px]">WAKTU</th>
+                      <th className="px-4 py-3">KEGIATAN</th>
+                      <th className="px-4 py-3">CATATAN</th>
+                      <th className="px-4 py-3 w-[64px]"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-700/60">
+                    {dayItems.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-4 py-8 text-center text-gray-500 text-sm">
+                          Belum ada kegiatan. Tambahkan slot baru di sebelah kiri.
+                        </td>
+                      </tr>
+                    ) : (
+                      dayItems.map((item) => (
+                        <tr key={item.id} className="hover:bg-gray-800/40">
+                          <td className="px-4 py-3 align-top">
+                            <div className="text-blue-400 font-semibold text-sm">
+                              {item.time.includes(' - ') ? item.time.split(' - ')[0] : item.time}
+                            </div>
+                            {item.time.includes(' - ') && (
+                              <div className="text-[11px] text-gray-500 font-medium">s/d {item.time.split(' - ')[1]}</div>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 align-top">
+                            <div className="text-white font-medium text-sm break-words">{item.activity}</div>
+                          </td>
+                          <td className="px-4 py-3 align-top">
+                            <div className="text-gray-400 text-xs break-words">{item.note || '-'}</div>
+                          </td>
+                          <td className="px-4 py-3 align-top text-right">
+                            <button
+                              onClick={() => {
+                                if (confirm(`Yakin hapus "${item.activity}"?`)) {
+                                  deleteItem(item.id);
+                                }
+                              }}
+                              className="text-red-500 hover:text-red-400 text-xs font-medium transition-colors px-2 py-1 rounded hover:bg-red-500/10"
+                              title="Hapus kegiatan"
+                            >
+                              DEL
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {dayItems.length > 0 && (

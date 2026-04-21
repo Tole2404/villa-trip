@@ -44,6 +44,32 @@ function HomeContent() {
   }, []);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const isMobile = window.matchMedia('(max-width: 639px)').matches;
+    if (!isMobile) return;
+
+    const getTabFromHash = () => {
+      const hash = window.location.hash.replace('#', '').trim();
+      if (!hash) return null;
+      const normalized = hash.startsWith('tab=') ? hash.slice(4) : hash;
+      return normalized as typeof activeTab;
+    };
+
+    const syncFromHash = () => {
+      const t = getTabFromHash();
+      if (!t) return;
+      setActiveTabState(t);
+    };
+
+    syncFromHash();
+    window.addEventListener('hashchange', syncFromHash);
+    return () => {
+      window.removeEventListener('hashchange', syncFromHash);
+    };
+  }, []);
+
+  useEffect(() => {
     if (typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches) {
       return;
     }
@@ -65,6 +91,10 @@ function HomeContent() {
       // Mobile Safari/Chrome + Next dev overlay can throw inside History.pushState.
       // For mobile bottom-nav tab switches, keep it state-only (no URL sync) to avoid crashes.
       if (typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches) {
+        const hash = tab === 'home' ? '' : tab;
+        if (window.location.hash.replace('#', '') !== hash) {
+          window.location.hash = hash;
+        }
         return;
       }
 
@@ -175,7 +205,7 @@ function HomeContent() {
 
       case 'itinerary':
         return (
-          <div className="h-[calc(100vh-200px)]">
+          <div className="space-y-4">
             <Itinerary 
               onClose={() => setActiveTab('home')} 
               isAdmin={isAdminAuthenticated}
