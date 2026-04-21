@@ -21,7 +21,7 @@ export function MobileLayout({
     { id: 'calculator', label: 'Kalkulasi', icon: '🧮' },
     { id: 'add', label: 'Tambah', icon: '➕', isAction: true },
     { id: 'polling', label: 'Polling', icon: '🏡' },
-    { id: 'monitoring', label: 'Monitoring', icon: '📋' },
+    { id: 'itinerary', label: 'Itinerary', icon: '�️' },
     { id: 'expenses', label: 'Pengeluaran', icon: '💰' },
   ];
 

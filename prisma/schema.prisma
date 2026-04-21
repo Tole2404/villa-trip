@@ -96,3 +96,15 @@ model Expense {
 
   @@map("expenses")
 }
+
+model Rundown {
+  id        String   @id @default(cuid())
+  day       Int      @default(1) // 1 or 2
+  time      String
+  activity  String
+  note      String?
+  icon      String   @default("🗓️")
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

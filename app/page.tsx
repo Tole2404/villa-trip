@@ -44,6 +44,10 @@ function HomeContent() {
   }, []);
 
   useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches) {
+      return;
+    }
+
     if (tabParam && tabParam !== activeTab) {
       setActiveTabState(tabParam);
     } else if (!tabParam && activeTab !== 'home') {
@@ -58,6 +62,12 @@ function HomeContent() {
     setActiveTabState(tab);
 
     startTransition(() => {
+      // Mobile Safari/Chrome + Next dev overlay can throw inside History.pushState.
+      // For mobile bottom-nav tab switches, keep it state-only (no URL sync) to avoid crashes.
+      if (typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches) {
+        return;
+      }
+
       const params = new URLSearchParams(window.location.search);
       if (tab === 'home') {
         params.delete('tab');
@@ -67,6 +77,7 @@ function HomeContent() {
 
       const queryString = params.toString();
       const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
+
       router.push(newUrl, { scroll: false });
     });
   };
@@ -165,7 +176,10 @@ function HomeContent() {
       case 'itinerary':
         return (
           <div className="h-[calc(100vh-200px)]">
-            <Itinerary onClose={() => setActiveTab('home')} />
+            <Itinerary 
+              onClose={() => setActiveTab('home')} 
+              isAdmin={isAdminAuthenticated}
+            />
           </div>
         );
 
@@ -346,6 +360,12 @@ function HomeContent() {
               >
                 <span>📊</span> Statistik
               </button>
+              <button
+                onClick={() => setActiveTab('itinerary')}
+                className="bg-slate-700 hover:bg-slate-800 text-white p-3 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 shadow-lg shadow-slate-500/10 active:scale-95 transition-all"
+              >
+                <span>📜</span> Rundown
+              </button>
             </div>
 
             {/* Recent Members Preview */}
@@ -521,7 +541,10 @@ function HomeContent() {
             if (e.target === e.currentTarget) setShowItinerary(false);
           }}
         >
-          <Itinerary onClose={() => setShowItinerary(false)} />
+          <Itinerary 
+            onClose={() => setShowItinerary(false)} 
+            isAdmin={isAdminAuthenticated}
+          />
         </div>
       )}
     </MobileLayout>
