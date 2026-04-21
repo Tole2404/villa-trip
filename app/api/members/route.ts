@@ -18,12 +18,14 @@ export async function GET() {
       const remaining = member.targetAmount - totalPaid;
 
       let status = 'pending';
+      const DP_THRESHOLD = 30000;
+      
       if (remaining <= 0) {
         status = 'completed';
-      } else if (totalPaid > member.dpAmount && member.dpAmount > 0) {
+      } else if (totalPaid > DP_THRESHOLD) {
         status = 'savings';
-      } else if (totalPaid >= member.dpAmount && member.dpAmount > 0) {
-        status = member.payments.some((p) => p.type === 'savings') ? 'savings' : 'dp_only';
+      } else if (totalPaid >= DP_THRESHOLD) {
+        status = member.payments.some((p) => p.type === 'savings') ? 'savings' : 'dp';
       }
 
       return {

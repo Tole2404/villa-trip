@@ -13,11 +13,7 @@ export async function GET() {
       _sum: { amount: true },
     });
     
-    const dpCompleted = await prisma.member.count({
-      where: { dpPaid: true },
-    });
-
-    // Get fully paid members (total paid >= target)
+    // Get all members with payments to calculate true DP and Full status
     const membersWithPayments = await prisma.member.findMany({
       include: {
         payments: {
@@ -25,6 +21,13 @@ export async function GET() {
         },
       },
     });
+
+    const DP_THRESHOLD = 30000;
+
+    const dpCompleted = membersWithPayments.filter((m) => {
+      const totalPaid = m.payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+      return totalPaid >= DP_THRESHOLD;
+    }).length;
 
     const fullyPaid = membersWithPayments.filter((m) => {
       const totalPaid = m.payments.reduce((sum, p) => sum + (p.amount || 0), 0);

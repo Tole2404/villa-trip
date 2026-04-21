@@ -18,7 +18,7 @@ interface MemberCardProps {
 
 const statusLabels = {
   pending: { text: 'Belum DP', color: 'bg-red-100 text-red-700 border-red-200' },
-  dp_only: { text: 'DP Only', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
+  dp: { text: 'Sudah DP', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
   savings: { text: 'Nabung', color: 'bg-blue-100 text-blue-700 border-blue-200' },
   completed: { text: 'Lunas', color: 'bg-green-100 text-green-700 border-green-200' },
 };

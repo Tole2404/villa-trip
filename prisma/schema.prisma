@@ -85,3 +85,14 @@ model PushSubscription {
 
   @@map("push_subscriptions")
 }
+
+model Expense {
+  id        String   @id @default(uuid())
+  name      String
+  amount    Int
+  category  String   // 'villa', 'transport', 'konsumsi', 'lainnya'
+  date      DateTime @db.Date
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("expenses")
+}

@@ -5,11 +5,10 @@ import { useState, useEffect, useRef } from 'react';
 interface Activity {
   id: string;
   amount: number;
-  type: string;
+  type: 'payment' | 'expense';
   createdAt: string;
-  member: {
-    name: string;
-  };
+  name: string;
+  category: string;
 }
 
 export function NotificationBell() {
@@ -178,15 +177,19 @@ export function NotificationBell() {
               activities.map((act) => (
                 <div key={act.id} className="px-5 py-4 border-b border-gray-50 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
                   <div className="flex gap-3">
-                    <div className="w-8 h-8 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center text-xs">
-                      💰
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs ${
+                      act.type === 'payment' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'
+                    }`}>
+                      {act.type === 'payment' ? '💰' : '💸'}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold text-gray-900 dark:text-white leading-tight truncate">
-                        {act.member.name}
+                        {act.name}
                       </p>
-                      <p className="text-[10px] text-emerald-500 font-black mt-0.5">
-                        Bayar {formatRp(act.amount)}
+                      <p className={`text-[10px] font-black mt-0.5 ${
+                        act.type === 'payment' ? 'text-emerald-500' : 'text-rose-500'
+                      }`}>
+                        {act.type === 'payment' ? 'Bayar' : 'Keluar'} {formatRp(act.amount)}
                       </p>
                       <p className="text-[8px] text-slate-500 mt-1 uppercase font-bold tracking-tighter">
                         {new Date(act.createdAt).toLocaleDateString('id-ID', { hour: '2-digit', minute: '2-digit' })}

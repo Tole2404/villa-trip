@@ -55,11 +55,11 @@ export async function POST(
       select: { dpAmount: true },
     });
 
-    if (member && totalPaid._sum.amount !== null) {
+    if (totalPaid._sum.amount !== null) {
       await prisma.member.update({
         where: { id },
         data: {
-          dpPaid: totalPaid._sum.amount >= member.dpAmount,
+          dpPaid: totalPaid._sum.amount >= 30000,
         },
       });
     }
@@ -120,7 +120,7 @@ export async function DELETE(
       await prisma.member.update({
         where: { id },
         data: {
-          dpPaid: (totalPaid._sum.amount || 0) >= member.dpAmount,
+          dpPaid: (totalPaid._sum.amount || 0) >= 30000,
         },
       });
     }

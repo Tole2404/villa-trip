@@ -182,7 +182,7 @@ export function TripExpenses({ totalCollected, onClose }: { totalCollected: numb
       <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[40]">
         <div className="bg-black/60 backdrop-blur-xl border border-white/10 px-4 py-2 rounded-full flex items-center gap-2 shadow-2xl">
           <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-          <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none">Auto-Saved to Local Storage</span>
+          <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none">Auto-Saved to Cloud Database</span>
         </div>
       </div>
     </div>

@@ -14,6 +14,7 @@ import { PollingForm } from '@/components/PollingForm';
 import { PasswordModal } from '@/components/PasswordModal';
 import { TripCalculator } from '@/components/TripCalculator';
 import { Monitoring, MonitoringSummary } from '@/components/Monitoring';
+import { DetailedStats } from '@/components/DetailedStats';
 import { TripExpenses } from '@/components/TripExpenses';
 import { useExpenses } from '@/hooks/useExpenses';
 import { NotificationBell } from '@/components/NotificationBell';
@@ -149,29 +150,15 @@ function HomeContent() {
 
       case 'stats':
         return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Statistik Trip</h2>
-            <StatsCard
-              stats={{ ...stats, totalSpent }}
-              onShowExpenses={() => setShowExpensePopup(true)}
-            />
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-              <h3 className="font-semibold text-gray-900 mb-3">Ringkasan Pembayaran</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between py-2 border-b border-gray-100">
-                  <span className="text-gray-600">Total Target</span>
-                  <span className="font-semibold">Rp {stats.totalTarget.toLocaleString('id-ID')}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-gray-100">
-                  <span className="text-gray-600">Sudah Terkumpul</span>
-                  <span className="font-semibold text-green-600">Rp {stats.totalCollected.toLocaleString('id-ID')}</span>
-                </div>
-                <div className="flex justify-between py-2">
-                  <span className="text-gray-600">Belum Lunas</span>
-                  <span className="font-semibold text-orange-600">{members.length - stats.fullyPaid} orang</span>
-                </div>
+          <div className="space-y-6">
+            <div className="flex justify-between items-center mb-2">
+              <div>
+                <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Analytics 📊</h2>
+                <p className="text-xs text-gray-500 font-medium">Data real-time keuangan villa trip.</p>
               </div>
+              <NotificationBell />
             </div>
+            <DetailedStats members={members} stats={stats} />
           </div>
         );
 
