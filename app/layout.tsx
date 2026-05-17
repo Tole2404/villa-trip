@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { StoreProvider } from "@/components/StoreProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { PWAHandler } from "@/components/PWAHandler";
 
@@ -50,10 +51,12 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col transition-colors duration-200" suppressHydrationWarning>
-        <ThemeProvider>
-          <PWAHandler />
-          {children}
-        </ThemeProvider>
+        <StoreProvider>
+          <ThemeProvider>
+            <PWAHandler />
+            {children}
+          </ThemeProvider>
+        </StoreProvider>
       </body>
     </html>
   );

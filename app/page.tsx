@@ -20,19 +20,53 @@ import { useExpenses } from '@/hooks/useExpenses';
 import { NotificationBell } from '@/components/NotificationBell';
 import { VillaPolling, PollingInput, Vote } from '@/types';
 
+type AppTab = 'home' | 'members' | 'itinerary' | 'stats' | 'polling' | 'calculator' | 'monitoring' | 'expenses';
+type MemberFilter = 'all' | 'pending' | 'dp' | 'savings' | 'completed';
+type SortOption = 'created_desc' | 'name_asc' | 'name_desc' | 'remaining_desc' | 'paid_desc';
+
+const formatShortCurrency = (amount: number) => {
+  if (amount >= 1000000) return `Rp ${(amount / 1000000).toFixed(1).replace('.', ',')} jt`;
+  if (amount >= 1000) return `Rp ${(amount / 1000).toFixed(0)} rb`;
+  return `Rp ${amount.toLocaleString('id-ID')}`;
+};
+
+const memberStatusCopy = {
+  completed: 'Lunas',
+  pending: 'Belum DP',
+  dp: 'Sudah DP',
+  savings: 'Nabung',
+} as const;
+
+const memberStatusTone = {
+  completed: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300',
+  pending: 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300',
+  dp: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300',
+  savings: 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300',
+} as const;
+
+const quickActionTone = {
+  blue: 'bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/20 dark:hover:bg-blue-500/15',
+  rose: 'bg-rose-50 text-rose-700 border-rose-100 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-300 dark:border-rose-500/20 dark:hover:bg-rose-500/15',
+  amber: 'bg-amber-50 text-amber-700 border-amber-100 hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/20 dark:hover:bg-amber-500/15',
+  emerald: 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20 dark:hover:bg-emerald-500/15',
+  indigo: 'bg-indigo-50 text-indigo-700 border-indigo-100 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-300 dark:border-indigo-500/20 dark:hover:bg-indigo-500/15',
+  violet: 'bg-violet-50 text-violet-700 border-violet-100 hover:bg-violet-100 dark:bg-violet-500/10 dark:text-violet-300 dark:border-violet-500/20 dark:hover:bg-violet-500/15',
+  slate: 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-700',
+} as const;
+
 function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
-  const tabParam = searchParams.get('tab') as 'home' | 'members' | 'itinerary' | 'stats' | 'polling' | 'calculator' | 'monitoring' | 'expenses' | null;
+  const tabParam = searchParams.get('tab') as AppTab | null;
   const { members, loaded, addMember, updateMember, deleteMember, addPayment, deletePayment, getPayments, stats } = useMembers();
   const [showAddForm, setShowAddForm] = useState(false);
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [showItinerary, setShowItinerary] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<null | (() => void)>(null);
-  const [activeTab, setActiveTabState] = useState<'home' | 'members' | 'itinerary' | 'stats' | 'polling' | 'calculator' | 'monitoring' | 'expenses'>(tabParam || 'home');
+  const [activeTab, setActiveTabState] = useState<AppTab>(tabParam || 'home');
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [showExpensePopup, setShowExpensePopup] = useState(false);
   const { totalSpent, expenses } = useExpenses();
@@ -112,10 +146,10 @@ function HomeContent() {
     });
   };
 
-  const [filter, setFilter] = useState<'all' | 'pending' | 'dp' | 'savings' | 'completed'>('all');
+  const [filter, setFilter] = useState<MemberFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMemberId, setSelectedMemberId] = useState('');
-  const [sortBy, setSortBy] = useState<'created_desc' | 'name_asc' | 'name_desc' | 'remaining_desc' | 'paid_desc'>('name_asc');
+  const [sortBy, setSortBy] = useState<SortOption>('name_asc');
 
   if (!loaded) {
     return (
@@ -165,6 +199,28 @@ function HomeContent() {
     { key: 'completed', label: 'Lunas', count: members.filter(m => m.status === 'completed').length },
   ] as const;
 
+  const completionRate = stats.totalMembers > 0 ? Math.round((stats.fullyPaid / stats.totalMembers) * 100) : 0;
+  const balance = stats.totalCollected - totalSpent;
+  const latestMembers = [...members]
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 4);
+
+  const quickActions: Array<{
+    tab: AppTab;
+    icon: string;
+    label: string;
+    description: string;
+    tone: keyof typeof quickActionTone;
+  }> = [
+    { tab: 'members', icon: '👥', label: 'Anggota', description: `${members.length} peserta`, tone: 'blue' },
+    { tab: 'expenses', icon: '💰', label: 'Pengeluaran', description: formatShortCurrency(totalSpent), tone: 'rose' },
+    { tab: 'calculator', icon: '🧮', label: 'Kalkulasi', description: `${completionRate}% lunas`, tone: 'amber' },
+    { tab: 'polling', icon: '🏡', label: 'Polling', description: 'Pilih villa', tone: 'emerald' },
+    { tab: 'monitoring', icon: '📋', label: 'Checklist', description: 'Persiapan trip', tone: 'indigo' },
+    { tab: 'stats', icon: '📊', label: 'Statistik', description: formatShortCurrency(balance), tone: 'violet' },
+    { tab: 'itinerary', icon: '📜', label: 'Rundown', description: 'Agenda acara', tone: 'slate' },
+  ];
+
 
   // Render content based on active tab
   const renderContent = () => {
@@ -192,10 +248,11 @@ function HomeContent() {
       case 'stats':
         return (
           <div className="space-y-6">
-            <div className="flex justify-between items-center mb-2">
+            <div className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
               <div>
-                <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Analytics 📊</h2>
-                <p className="text-xs text-gray-500 font-medium">Data real-time keuangan villa trip.</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-600 dark:text-blue-400">Analytics</p>
+                <h2 className="text-2xl font-black tracking-tight text-slate-950 dark:text-white">Statistik Trip 📊</h2>
+                <p className="mt-1 text-sm font-medium text-slate-500 dark:text-gray-400">Data real-time keuangan dan progres pembayaran.</p>
               </div>
               <NotificationBell />
             </div>
@@ -217,56 +274,69 @@ function HomeContent() {
         return (
           <>
             {/* Members-only view - No stats, just members */}
-            <div className="flex justify-between items-center mb-6">
+            <div className="mb-5 flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Daftar Anggota ({sortedMembers.length})</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Kelola pembayaran dan status anggota</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-600 dark:text-blue-400">Anggota</p>
+                <h2 className="text-xl font-black text-slate-950 dark:text-white">Daftar Peserta ({sortedMembers.length})</h2>
+                <p className="mt-1 text-sm font-medium text-slate-500 dark:text-gray-400">Kelola pembayaran, DP, dan status peserta.</p>
               </div>
               <NotificationBell />
             </div>
 
             {/* Search & Filter */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-3 mb-4">
-              <div className="flex gap-2 mb-3">
-                <div className="flex-1 relative">
+            <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:p-4">
+              <div className="grid gap-2 sm:grid-cols-[1fr_180px_180px]">
+                <div className="relative">
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Cari nama..."
-                    className="w-full pl-9 pr-8 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white text-sm placeholder-gray-400 dark:placeholder-gray-500"
+                    placeholder="Cari nama atau nomor HP..."
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-9 text-sm font-medium text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 dark:focus:border-blue-500 dark:focus:bg-gray-900"
                   />
-                  <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                   {searchQuery && (
-                    <button onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2">
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-gray-700" aria-label="Hapus pencarian">
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
                   )}
                 </div>
                 <select
+                  value={selectedMemberId}
+                  onChange={(e) => setSelectedMemberId(e.target.value)}
+                  className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:focus:border-blue-500 dark:focus:bg-gray-900"
+                >
+                  <option value="">Semua anggota</option>
+                  {[...members].sort((a, b) => a.name.localeCompare(b.name)).map((member) => (
+                    <option key={member.id} value={member.id}>{member.name}</option>
+                  ))}
+                </select>
+                <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                  className="px-3 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => setSortBy(e.target.value as SortOption)}
+                  className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:focus:border-blue-500 dark:focus:bg-gray-900"
                 >
                   <option value="created_desc">Terbaru</option>
                   <option value="name_asc">A-Z</option>
+                  <option value="name_desc">Z-A</option>
                   <option value="remaining_desc">Sisa ↓</option>
+                  <option value="paid_desc">Terbayar ↓</option>
                 </select>
               </div>
 
               {/* Quick filter chips */}
-              <div className="flex gap-1.5 flex-wrap pb-1">
+              <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
                 {filterButtons.map((btn) => (
                   <button
                     key={btn.key}
-                    onClick={() => setFilter(btn.key as typeof filter)}
-                    className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${filter === btn.key
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                    onClick={() => setFilter(btn.key as MemberFilter)}
+                    className={`flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-black transition-colors whitespace-nowrap ${filter === btn.key
+                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
                       }`}
                   >
                     {btn.label} {btn.count > 0 && `(${btn.count})`}
@@ -278,13 +348,13 @@ function HomeContent() {
             {/* Members List */}
             <div className="space-y-3 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-4 sm:space-y-0">
               {sortedMembers.length === 0 ? (
-                <div className="col-span-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
-                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm dark:border-gray-700 dark:bg-gray-900">
+                  <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 dark:bg-gray-800">
+                    <svg className="h-8 w-8 text-slate-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0 2 2 0 014 0z" />
                     </svg>
                   </div>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm">Tidak ada anggota</p>
+                  <p className="text-sm font-semibold text-slate-500 dark:text-gray-400">Tidak ada anggota yang cocok.</p>
                 </div>
               ) : (
                 <>
@@ -325,126 +395,122 @@ function HomeContent() {
       case 'home':
       default:
         return (
-          <>
-            {/* Home view - Full overview with stats */}
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Halo, Cikkk! 😼</h1>
-                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Cek progres villa trip kita di sini.</p>
+          <div className="space-y-5">
+            <section className="overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-sm dark:border-blue-500/20 dark:bg-gray-900">
+              <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-slate-900 p-5 text-white sm:p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-blue-100">Villa Trip</p>
+                    <h1 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">Halo, Cikkk! 😼</h1>
+                    <p className="mt-1 max-w-xl text-sm font-medium text-blue-100">Cek progres pembayaran, kas, dan persiapan trip kita di sini.</p>
+                  </div>
+                  <div className="rounded-full bg-white/10 p-1 backdrop-blur">
+                    <NotificationBell />
+                  </div>
+                </div>
+
+                <div className="mt-5 grid grid-cols-3 gap-2">
+                  <div className="rounded-xl bg-white/10 p-3 ring-1 ring-white/10">
+                    <p className="text-[9px] font-black uppercase tracking-wider text-blue-100">Peserta</p>
+                    <p className="mt-1 text-lg font-black">{stats.totalMembers}</p>
+                  </div>
+                  <div className="rounded-xl bg-white/10 p-3 ring-1 ring-white/10">
+                    <p className="text-[9px] font-black uppercase tracking-wider text-blue-100">Lunas</p>
+                    <p className="mt-1 text-lg font-black">{completionRate}%</p>
+                  </div>
+                  <div className="rounded-xl bg-white/10 p-3 ring-1 ring-white/10">
+                    <p className="text-[9px] font-black uppercase tracking-wider text-blue-100">Sisa Kas</p>
+                    <p className="mt-1 truncate text-lg font-black">{formatShortCurrency(balance)}</p>
+                  </div>
+                </div>
               </div>
-              <NotificationBell />
-            </div>
+            </section>
 
-            {/* Highlight Progress (Hanya yang sudah diceklis) */}
-            <div className="mb-6 cursor-pointer active:scale-95 transition-all" onClick={() => setActiveTab('monitoring')}>
-              <h2 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-tighter mb-3 flex items-center gap-2">
-                <span className="w-1.5 h-4 bg-indigo-600 rounded-full"></span>
-                Milestone Persiapan
-              </h2>
+            <section className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all active:scale-[0.99] dark:border-gray-800 dark:bg-gray-900" onClick={() => setActiveTab('monitoring')}>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-400">Milestone</p>
+                  <h2 className="text-base font-black text-slate-950 dark:text-white">Persiapan Trip</h2>
+                </div>
+                <span className="rounded-full bg-indigo-50 px-3 py-1 text-[10px] font-black text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300">Kelola →</span>
+              </div>
               <MonitoringSummary />
-              <p className="text-[9px] text-slate-500 text-center mt-2 italic">Ketuk untuk kelola semua persiapan →</p>
-            </div>
+            </section>
 
-            <div className="mb-4">
-              <StatsCard
-                stats={{ ...stats, totalSpent }}
-                onShowExpenses={() => setShowExpensePopup(true)}
-              />
-            </div>
+            <StatsCard
+              stats={{ ...stats, totalSpent }}
+              onShowExpenses={() => setShowExpensePopup(true)}
+            />
 
-            {/* Quick Actions */}
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              <button
-                onClick={() => setActiveTab('members')}
-                className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 shadow-lg shadow-blue-500/10 active:scale-95 transition-all"
-              >
-                <span>👥</span> Anggota
-              </button>
-              <button
-                onClick={() => setActiveTab('expenses')}
-                className="bg-rose-600 hover:bg-rose-700 text-white p-3 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 shadow-lg shadow-rose-500/10 active:scale-95 transition-all"
-              >
-                <span>💰</span> Pengeluaran
-              </button>
-              <button
-                onClick={() => setActiveTab('calculator')}
-                className="bg-orange-600 hover:bg-orange-700 text-white p-3 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 shadow-lg shadow-orange-500/10 active:scale-95 transition-all"
-              >
-                <span>🧮</span> Kalkulasi
-              </button>
-              <button
-                onClick={() => setActiveTab('polling')}
-                className="bg-green-600 hover:bg-green-700 text-white p-3 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 shadow-lg shadow-green-500/10 active:scale-95 transition-all"
-              >
-                <span>🏡</span> Polling
-              </button>
-              <button
-                onClick={() => setActiveTab('monitoring')}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 shadow-lg shadow-indigo-500/10 active:scale-95 transition-all"
-              >
-                <span>📋</span> Checklist
-              </button>
-              <button
-                onClick={() => setActiveTab('stats')}
-                className="bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 shadow-lg shadow-purple-500/10 active:scale-95 transition-all"
-              >
-                <span>📊</span> Statistik
-              </button>
-              <button
-                onClick={() => setActiveTab('itinerary')}
-                className="bg-slate-700 hover:bg-slate-800 text-white p-3 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 shadow-lg shadow-slate-500/10 active:scale-95 transition-all"
-              >
-                <span>📜</span> Rundown
-              </button>
-            </div>
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-600 dark:text-blue-400">Menu Cepat</p>
+                  <h2 className="text-base font-black text-slate-950 dark:text-white">Akses utama</h2>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {quickActions.map((action) => (
+                  <button
+                    key={action.tab}
+                    onClick={() => setActiveTab(action.tab)}
+                    className={`min-h-[86px] rounded-xl border p-3 text-left transition-all active:scale-[0.98] ${quickActionTone[action.tone]}`}
+                  >
+                    <span className="text-xl leading-none">{action.icon}</span>
+                    <span className="mt-2 block text-sm font-black leading-tight">{action.label}</span>
+                    <span className="mt-1 block truncate text-[11px] font-semibold opacity-75">{action.description}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
 
-            {/* Recent Members Preview */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-3">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-gray-900 dark:text-white">Anggota Terbaru</h3>
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 dark:text-gray-400">Update</p>
+                  <h3 className="font-black text-slate-950 dark:text-white">Anggota Terbaru</h3>
+                </div>
                 <button
                   onClick={() => setActiveTab('members')}
-                  className="text-xs text-blue-600 dark:text-blue-400 font-medium"
+                  className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-black text-blue-700 transition-colors hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/15"
                 >
                   Lihat Semua →
                 </button>
               </div>
 
               <div className="space-y-2">
-                {sortedMembers.slice(0, 3).map((member) => (
+                {latestMembers.map((member) => (
                   <div
                     key={member.id}
-                    className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                    className="flex items-center gap-3 rounded-xl bg-slate-50 p-3 dark:bg-gray-800/70"
                   >
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 font-black text-white shadow-sm">
                       {member.name.charAt(0).toUpperCase()}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 dark:text-white text-sm truncate">{member.name}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {member.status === 'completed' ? '✅ Lunas' :
-                          member.status === 'pending' ? '⚠️ Belum DP' :
-                            member.status === 'dp' ? '💰 Sudah DP' : '💵 Nabung'}
-                      </p>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-black text-slate-950 dark:text-white">{member.name}</p>
+                      <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-black ${memberStatusTone[member.status]}`}>
+                        {memberStatusCopy[member.status]}
+                      </span>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                        Rp {(member.total_paid / 1000).toFixed(0)}K
+                      <p className="text-sm font-black text-slate-950 dark:text-white">
+                        {formatShortCurrency(member.total_paid)}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        / Rp {(member.target_amount / 1000).toFixed(0)}K
+                      <p className="text-[10px] font-semibold text-slate-500 dark:text-gray-400">
+                        dari {formatShortCurrency(member.target_amount)}
                       </p>
                     </div>
                   </div>
                 ))}
-                {sortedMembers.length === 0 && (
-                  <p className="text-center text-gray-500 dark:text-gray-400 text-sm py-4">
-                    Belum ada anggota
-                  </p>
+                {latestMembers.length === 0 && (
+                  <div className="rounded-xl border border-dashed border-slate-300 py-8 text-center dark:border-gray-700">
+                    <p className="text-sm font-semibold text-slate-500 dark:text-gray-400">Belum ada anggota.</p>
+                  </div>
                 )}
               </div>
-            </div>
-          </>
+            </section>
+          </div>
         );
     }
   };
@@ -455,52 +521,55 @@ function HomeContent() {
       onTabChange={setActiveTab}
       onAddPress={() => setShowAddForm(true)}
     >
-      {renderContent()}
+      <div aria-busy={isPending} className={`transition-opacity duration-200 ${isPending ? 'opacity-80' : 'opacity-100'}`}>
+        {renderContent()}
+      </div>
 
       {/* Expense Details Popup */}
       {showExpensePopup && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in transition-all">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl animate-in slide-in-from-bottom-10">
-            <div className="p-6 pb-2 flex justify-between items-center border-b border-white/5 bg-white/[0.02]">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm animate-in fade-in transition-all">
+          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl animate-in slide-in-from-bottom-10 dark:border-gray-800 dark:bg-gray-900">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-5 dark:border-gray-800">
               <div>
-                <h3 className="text-sm font-black uppercase tracking-widest text-white">Rincian Dana Keluar</h3>
-                <p className="text-[10px] text-rose-400 font-bold tracking-tight">TOTAL: Rp {totalSpent.toLocaleString('id-ID')}</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-rose-600 dark:text-rose-400">Dana Keluar</p>
+                <h3 className="mt-1 text-lg font-black text-slate-950 dark:text-white">Rincian Pengeluaran</h3>
+                <p className="mt-1 text-sm font-bold text-slate-500 dark:text-gray-400">Total Rp {totalSpent.toLocaleString('id-ID')}</p>
               </div>
-              <button onClick={() => setShowExpensePopup(false)} className="w-10 h-10 flex items-center justify-center bg-slate-800 rounded-2xl text-slate-400 hover:text-white transition-colors">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              <button onClick={() => setShowExpensePopup(false)} className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-900 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" aria-label="Tutup rincian pengeluaran">
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
 
-            <div className="p-6 max-h-[60vh] overflow-y-auto no-scrollbar space-y-3">
+            <div className="max-h-[60vh] space-y-2 overflow-y-auto p-5 no-scrollbar">
               {expenses.length === 0 ? (
-                <div className="py-12 text-center">
-                  <p className="text-slate-500 text-xs italic">Belum ada rincian pengeluaran.</p>
+                <div className="rounded-xl border border-dashed border-slate-300 py-12 text-center dark:border-gray-700">
+                  <p className="text-sm font-semibold text-slate-500 dark:text-gray-400">Belum ada rincian pengeluaran.</p>
                 </div>
               ) : (
                 [...expenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((e) => (
-                  <div key={e.id} className="flex items-center justify-between p-4 bg-white/[0.03] border border-white/5 rounded-2xl">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-xs">
+                  <div key={e.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 dark:border-gray-800 dark:bg-gray-800/70">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-sm shadow-sm dark:bg-gray-900">
                         {e.category === 'villa' ? '🏡' : e.category === 'transport' ? '🚗' : e.category === 'konsumsi' ? '🍽️' : '📦'}
                       </div>
-                      <div>
-                        <p className="text-xs font-bold text-white leading-tight">{e.name || 'Tanpa Keterangan'}</p>
-                        <p className="text-[9px] text-slate-500 uppercase tracking-widest mt-0.5">{new Date(e.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} • {e.category}</p>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-black leading-tight text-slate-950 dark:text-white">{e.name || 'Tanpa Keterangan'}</p>
+                        <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400">{new Date(e.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} • {e.category}</p>
                       </div>
                     </div>
-                    <p className="text-sm font-black text-rose-400">-{e.amount.toLocaleString('id-ID')}</p>
+                    <p className="shrink-0 text-sm font-black text-rose-600 dark:text-rose-400">-{e.amount.toLocaleString('id-ID')}</p>
                   </div>
                 ))
               )}
             </div>
 
-            <div className="p-6 pt-0">
+            <div className="border-t border-slate-100 p-5 dark:border-gray-800">
               <button
                 onClick={() => {
                   setShowExpensePopup(false);
                   setActiveTab('expenses');
                 }}
-                className="w-full bg-slate-800 text-white/70 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-slate-700 transition-all active:scale-95 border border-white/5"
+                className="w-full rounded-xl bg-blue-600 py-3.5 text-xs font-black uppercase tracking-[0.16em] text-white transition-all hover:bg-blue-700 active:scale-[0.99]"
               >
                 Kelola Semua Pengeluaran →
               </button>
@@ -512,13 +581,21 @@ function HomeContent() {
       {/* Add Member Modal */}
       {showAddForm && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9999]"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowAddForm(false);
           }}
         >
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-auto relative z-[101]">
-            <h3 className="text-lg font-semibold mb-4 dark:text-white">Tambah Anggota Baru</h3>
+          <div className="relative z-[101] max-h-[90vh] w-full max-w-md overflow-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl dark:border-gray-800 dark:bg-gray-900 sm:p-6">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-600 dark:text-blue-400">Anggota</p>
+                <h3 className="mt-1 text-lg font-black text-slate-950 dark:text-white">Tambah Anggota Baru</h3>
+              </div>
+              <button onClick={() => setShowAddForm(false)} className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700" aria-label="Tutup form tambah anggota">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
             <MemberForm
               onSubmit={async (data) => {
                 const doAdd = async () => {
@@ -585,18 +662,18 @@ function AdminLock({ onUnlock }: { onUnlock: () => void }) {
   const [passwordInput, setPasswordInput] = useState('');
 
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 animate-in fade-in zoom-in-95 duration-500">
-      <div className="bg-white dark:bg-gray-800 p-8 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-gray-100 dark:border-gray-700 text-center relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-8 opacity-5">
+    <div className="flex flex-col items-center justify-center px-4 py-16 animate-in fade-in zoom-in-95 duration-500">
+      <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <div className="absolute right-0 top-0 p-8 opacity-5">
           <svg className="w-24 h-24" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z" /></svg>
         </div>
 
-        <div className="w-20 h-20 bg-blue-600/10 text-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-500/10">
+        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 shadow-sm dark:bg-blue-500/10 dark:text-blue-300">
           <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
         </div>
 
-        <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Akses Terkunci</h2>
-        <p className="text-gray-500 dark:text-gray-400 mb-8 text-sm font-medium">Hanya panitia inti yang bisa akses keuangan & polling.</p>
+        <h2 className="mb-2 text-2xl font-black text-slate-950 dark:text-white">Akses Terkunci</h2>
+        <p className="mb-8 text-sm font-medium text-slate-500 dark:text-gray-400">Hanya panitia inti yang bisa akses keuangan & polling.</p>
 
         <form onSubmit={(e) => {
           e.preventDefault();
@@ -611,10 +688,10 @@ function AdminLock({ onUnlock }: { onUnlock: () => void }) {
             placeholder="Password Admin"
             value={passwordInput}
             onChange={(e) => setPasswordInput(e.target.value)}
-            className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-2 border-transparent focus:border-blue-500 dark:focus:border-blue-400 rounded-2xl outline-none text-center font-black tracking-[0.5em] text-lg transition-all"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-6 py-4 text-center text-lg font-black tracking-[0.45em] outline-none transition-all focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:border-blue-500 dark:focus:bg-gray-900"
             autoFocus
           />
-          <button type="submit" className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl transition-all active:scale-95 shadow-xl shadow-blue-500/20 uppercase tracking-widest text-xs">
+          <button type="submit" className="w-full rounded-xl bg-blue-600 py-4 text-xs font-black uppercase tracking-[0.16em] text-white shadow-sm shadow-blue-500/20 transition-all hover:bg-blue-700 active:scale-[0.99]">
             Buka Akses
           </button>
         </form>
@@ -772,67 +849,71 @@ function PollingDashboard({ isAdminAuthenticated, onUnlock }: { isAdminAuthentic
   }
 
   return (
-    <div className="space-y-4 relative">
+    <div className="relative space-y-4">
       {actionLoading && (
-        <div className="absolute inset-0 z-10 bg-white/60 dark:bg-gray-900/60 backdrop-blur-[1px] rounded-xl flex items-center justify-center">
-          <div className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow">
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Memproses...</span>
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/70 backdrop-blur-[2px] dark:bg-gray-950/70">
+          <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-blue-600"></div>
+            <span className="text-sm font-bold text-slate-700 dark:text-gray-200">Memproses...</span>
           </div>
         </div>
       )}
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Polling Villa</h2>
+      <div className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-400">Admin Polling</p>
+          <h2 className="mt-1 text-xl font-black text-slate-950 dark:text-white">Polling Villa</h2>
+          <p className="mt-1 text-sm font-medium text-slate-500 dark:text-gray-400">{pollings.length} pilihan villa tersedia.</p>
+        </div>
         <button
           onClick={handleAddNew}
           disabled={actionLoading}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-black text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          Tambah Villa
+          <span className="hidden sm:inline">Tambah Villa</span>
         </button>
       </div>
 
       {/* Voting Portal Banner */}
-      <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-4 sm:p-6 text-white shadow-lg shadow-blue-500/20 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="flex flex-col items-start justify-between gap-4 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 p-4 text-white shadow-sm shadow-blue-500/20 sm:p-5 md:flex-row md:items-center">
         <div>
-          <h3 className="text-lg font-bold">Ayo Vote Villa Favoritmu! 🏖️</h3>
-          <p className="text-blue-100 text-sm mt-1">Sistem voting telah dipindah ke halaman khusus yang lebih bagus.</p>
+          <h3 className="text-lg font-black">Ayo Vote Villa Favoritmu! 🏖️</h3>
+          <p className="mt-1 text-sm font-medium text-blue-100">Ruang voting punya halaman khusus yang lebih fokus.</p>
         </div>
         <button
           onClick={() => router.push('/vote')}
-          className="w-full md:w-auto px-6 py-3 bg-white text-blue-600 hover:bg-blue-50 rounded-xl font-bold whitespace-nowrap transition-colors flex items-center justify-center gap-2 active:scale-95"
+          className="flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-white px-5 py-3 font-black text-blue-700 transition-colors hover:bg-blue-50 active:scale-[0.99] md:w-auto"
         >
           Masuk Ruang Voting
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
         </button>
       </div>
 
       {pollings.length === 0 ? (
-        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-          <svg className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white py-12 text-center shadow-sm dark:border-gray-700 dark:bg-gray-900">
+          <svg className="mx-auto mb-4 h-16 w-16 text-slate-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
           </svg>
-          <p className="text-gray-500 dark:text-gray-400">Belum ada villa yang ditambahkan</p>
+          <p className="font-semibold text-slate-500 dark:text-gray-400">Belum ada villa yang ditambahkan</p>
           <button
             onClick={handleAddNew}
             disabled={actionLoading}
-            className="mt-4 px-4 py-2 text-blue-600 dark:text-blue-400 font-medium hover:underline disabled:opacity-60 disabled:cursor-not-allowed"
+            className="mt-4 rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             Tambah Villa Pertama
           </button>
           <button
             onClick={fetchData}
             disabled={actionLoading}
-            className="mt-2 px-4 py-2 text-gray-600 dark:text-gray-300 font-medium hover:underline disabled:opacity-60 disabled:cursor-not-allowed"
+            className="mt-2 px-4 py-2 text-sm font-bold text-slate-600 hover:underline disabled:cursor-not-allowed disabled:opacity-60 dark:text-gray-300"
           >
             Refresh
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {pollings.map((polling) => (
             <PollingCard
               key={polling.id}
@@ -851,12 +932,12 @@ function PollingDashboard({ isAdminAuthenticated, onUnlock }: { isAdminAuthentic
       {/* Polling Form Modal */}
       {showPollingForm && (
         <div
-          className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9999]"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
           onClick={(e) => {
             if (e.target === e.currentTarget) handleCancel();
           }}
         >
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 w-full max-w-lg max-h-[90vh] overflow-auto relative shadow-2xl">
+          <div className="relative max-h-[90vh] w-full max-w-lg overflow-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl dark:border-gray-800 dark:bg-gray-900 sm:p-6">
             <PollingForm
               polling={editingPolling || undefined}
               onSubmit={editingPolling ? handleUpdate : handleCreate}
@@ -869,35 +950,36 @@ function PollingDashboard({ isAdminAuthenticated, onUnlock }: { isAdminAuthentic
       {/* Manage Votes Modal */}
       {managingVotes && (
         <div
-          className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9999]"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
           onClick={(e) => {
             if (e.target === e.currentTarget) setManagingVotes(null);
           }}
         >
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 w-full max-w-lg max-h-[90vh] flex flex-col relative shadow-2xl animate-fade-in">
-            <div className="flex justify-between items-center mb-6">
+          <div className="relative flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl animate-fade-in dark:border-gray-800 dark:bg-gray-900 sm:p-6">
+            <div className="mb-6 flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Kelola Suara</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">{managingVotes.name}</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-600 dark:text-blue-400">Voting</p>
+                <h3 className="mt-1 text-lg font-black text-slate-950 dark:text-white">Kelola Suara</h3>
+                <p className="mt-1 line-clamp-1 text-sm font-medium text-slate-500 dark:text-gray-400">{managingVotes.name}</p>
               </div>
-              <button onClick={() => setManagingVotes(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              <button onClick={() => setManagingVotes(null)} className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-900 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" aria-label="Tutup kelola suara">
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3">
+            <div className="custom-scrollbar flex-1 space-y-3 overflow-y-auto pr-1">
               {votes.filter(v => v.villaId === managingVotes.id).length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500 dark:text-gray-400">Belum ada suara untuk villa ini.</p>
+                <div className="rounded-xl border border-dashed border-slate-300 py-8 text-center dark:border-gray-700">
+                  <p className="font-semibold text-slate-500 dark:text-gray-400">Belum ada suara untuk villa ini.</p>
                 </div>
               ) : (
                 votes.filter(v => v.villaId === managingVotes.id).map(vote => (
-                  <div key={vote.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-800 transition-colors">
+                  <div key={vote.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 transition-colors hover:bg-white dark:border-gray-800 dark:bg-gray-800/60 dark:hover:bg-gray-800">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-sm">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 font-black text-white shadow-sm">
                         {vote.member?.name?.charAt(0).toUpperCase() || '?'}
                       </div>
-                      <span className="font-medium text-gray-900 dark:text-gray-200">{vote.member?.name || 'Anggota Anonim'}</span>
+                      <span className="font-bold text-slate-900 dark:text-gray-200">{vote.member?.name || 'Anggota Anonim'}</span>
                     </div>
                     <button
                       onClick={async () => {
@@ -914,7 +996,7 @@ function PollingDashboard({ isAdminAuthenticated, onUnlock }: { isAdminAuthentic
                         }
                       }}
                       disabled={actionLoading}
-                      className="p-2.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors active:scale-95 disabled:opacity-50"
+                      className="rounded-lg p-2.5 text-rose-500 transition-colors hover:bg-rose-50 active:scale-95 disabled:opacity-50 dark:hover:bg-rose-900/30"
                       title="Hapus Suara"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

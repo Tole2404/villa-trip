@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useExpenses } from '@/hooks/useExpenses';
 import { VillaPolling } from '@/types';
 
 interface Vehicle {
@@ -39,6 +40,7 @@ export function TripCalculator({ totalCollected, memberCount, onClose }: TripCal
   const [showPreview, setShowPreview] = useState(false);
   const [previewText, setPreviewText] = useState('');
   const isHydrated = useRef(false);
+  const { expenses, refreshExpenses } = useExpenses();
 
   // States
   const [selectedVillaId, setSelectedVillaId] = useState<string>('');
@@ -56,6 +58,8 @@ export function TripCalculator({ totalCollected, memberCount, onClose }: TripCal
     { id: 'c1', name: 'Makan Berat (Sekeluarga)', quantity: 1, unit: 'Paket', price: 2000000, category: 'makan' },
     { id: 'c2', name: 'Air Mineral (600ml)', quantity: 2, unit: 'Dus', price: 50000, category: 'minuman' },
   ]);
+  const [linkedExpenseIds, setLinkedExpenseIds] = useState<Record<string, string>>({});
+  const [syncingExpenseKey, setSyncingExpenseKey] = useState<string | null>(null);
 
   // UI Helpers
   const formatInput = (val: number) => {
@@ -83,6 +87,7 @@ export function TripCalculator({ totalCollected, memberCount, onClose }: TripCal
         if (data.tollCost !== undefined) setTollCost(data.tollCost);
         if (data.nights !== undefined) setNights(data.nights);
         if (data.additionalCosts !== undefined) setAdditionalCosts(data.additionalCosts);
+        if (data.linkedExpenseIds !== undefined) setLinkedExpenseIds(data.linkedExpenseIds);
         if (data.consumptionItems !== undefined) {
           const migrated = data.consumptionItems.map((item: any) => ({
             ...item,
@@ -112,12 +117,12 @@ export function TripCalculator({ totalCollected, memberCount, onClose }: TripCal
       const data = {
         selectedVillaId, manualVillaPrice, manualMemberCount,
         vehicles, carFuel, motorFuel, tollCost, nights,
-        additionalCosts, consumptionItems
+        additionalCosts, consumptionItems, linkedExpenseIds
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     }, 500);
     return () => clearTimeout(timeoutId);
-  }, [selectedVillaId, manualVillaPrice, manualMemberCount, vehicles, carFuel, motorFuel, tollCost, nights, additionalCosts, consumptionItems]);
+  }, [selectedVillaId, manualVillaPrice, manualMemberCount, vehicles, carFuel, motorFuel, tollCost, nights, additionalCosts, consumptionItems, linkedExpenseIds]);
 
   const fetchPollings = useCallback(async () => {
     try {
@@ -172,6 +177,96 @@ export function TripCalculator({ totalCollected, memberCount, onClose }: TripCal
   const diff = grandTotal - totalCollected;
 
   const formatRp = (v: number) => `Rp ${v.toLocaleString('id-ID')}`;
+  const selectedVillaName = pollings.find(p => p.id === selectedVillaId)?.name || 'Villa Manual';
+
+  const isExpenseLinked = (key: string) => {
+    const linkedId = linkedExpenseIds[key];
+    return Boolean(linkedId && expenses.some((expense) => expense.id === linkedId));
+  };
+
+  useEffect(() => {
+    setLinkedExpenseIds((prev) => {
+      const next = Object.fromEntries(
+        Object.entries(prev).filter(([, id]) => expenses.some((expense) => expense.id === id))
+      );
+      return Object.keys(next).length === Object.keys(prev).length ? prev : next;
+    });
+  }, [expenses]);
+
+  const toggleExpenseLink = async (
+    key: string,
+    payload: { name: string; amount: number; category: 'villa' | 'transport' | 'konsumsi' | 'lainnya' }
+  ) => {
+    if (payload.amount <= 0) {
+      alert('Nominalnya masih 0. Isi dulu sebelum dijadikan pengeluaran.');
+      return;
+    }
+
+    setSyncingExpenseKey(key);
+    try {
+      const linkedId = linkedExpenseIds[key];
+
+      if (linkedId && expenses.some((expense) => expense.id === linkedId)) {
+        const res = await fetch(`/api/expenses?id=${linkedId}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Failed to delete expense');
+
+        setLinkedExpenseIds((prev) => {
+          const next = { ...prev };
+          delete next[key];
+          return next;
+        });
+        await refreshExpenses();
+        return;
+      }
+
+      const res = await fetch('/api/expenses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...payload,
+          date: new Date().toISOString().split('T')[0],
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to create expense');
+
+      const createdExpense = await res.json();
+      setLinkedExpenseIds((prev) => ({ ...prev, [key]: createdExpense.id }));
+      await refreshExpenses();
+    } catch (e) {
+      console.error('Failed to sync calculator expense:', e);
+      alert('Gagal sinkron ke pengeluaran. Coba lagi ya.');
+    } finally {
+      setSyncingExpenseKey(null);
+    }
+  };
+
+  const renderExpenseToggleButton = (
+    key: string,
+    payload: { name: string; amount: number; category: 'villa' | 'transport' | 'konsumsi' | 'lainnya' },
+    compact = false
+  ) => {
+    const linked = isExpenseLinked(key);
+    const isSyncing = syncingExpenseKey === key;
+
+    return (
+      <button
+        onClick={() => toggleExpenseLink(key, payload)}
+        disabled={isSyncing}
+        className={`rounded-xl border px-3 py-2 font-bold uppercase tracking-widest transition-all active:scale-95 disabled:opacity-60 ${
+          linked
+            ? compact
+              ? 'text-[8px] border-amber-500/30 bg-amber-500/10 text-amber-300'
+              : 'text-[9px] border-amber-500/30 bg-amber-500/10 text-amber-300'
+            : compact
+              ? 'text-[8px] border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+              : 'text-[9px] border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+        }`}
+      >
+        {isSyncing ? 'Memproses...' : compact ? (linked ? 'Batalkan' : 'Jadikan') : (linked ? 'Batalkan Pengeluaran' : 'Jadikan Pengeluaran')}
+      </button>
+    );
+  };
 
   const generateWSMessage = () => {
     const villaName = pollings.find(p => p.id === selectedVillaId)?.name || 'Villa Belum Dipilih';
@@ -381,6 +476,13 @@ export function TripCalculator({ totalCollected, memberCount, onClose }: TripCal
               />
             </div>
           </div>
+          <div className="flex justify-end">
+            {renderExpenseToggleButton('villa_total', {
+              name: `Sewa Villa - ${selectedVillaName} (${nights} malam)`,
+              amount: villaTotal,
+              category: 'villa',
+            })}
+          </div>
         </div>
 
         {/* Transport */}
@@ -446,6 +548,17 @@ export function TripCalculator({ totalCollected, memberCount, onClose }: TripCal
               </div>
             )}
           </div>
+          <div className="flex items-center justify-between rounded-xl border border-slate-800/40 bg-slate-900/30 p-3">
+            <div>
+              <p className="text-[8px] font-medium uppercase tracking-widest text-slate-500">Total Transport</p>
+              <p className="mt-1 text-sm font-semibold text-white">{formatRp(totalFuelCost + totalTollCost)}</p>
+            </div>
+            {renderExpenseToggleButton('transport_total', {
+              name: `Transportasi Trip (${carCount} mobil, ${motorCount} motor)`,
+              amount: totalFuelCost + totalTollCost,
+              category: 'transport',
+            })}
+          </div>
         </div>
 
 
@@ -464,20 +577,26 @@ export function TripCalculator({ totalCollected, memberCount, onClose }: TripCal
           <div className="grid grid-cols-1 gap-2">
 
             {/* Linked Consumption Row (Baris Satu) */}
-            <div className="bg-slate-900/60 border border-indigo-500/30 rounded-xl p-3 flex justify-between items-center animate-in fade-in">
+            <div className="bg-slate-900/60 border border-indigo-500/30 rounded-xl p-3 flex justify-between items-center gap-3 animate-in fade-in">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></span>
-                <span className="text-xs font-bold text-white">Total Makan</span>
+                <div>
+                  <span className="text-xs font-bold text-white">Total Makan</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-slate-500">Rp</span>
+                    <span className="text-sm font-bold text-indigo-400 tracking-tight">{formatRp(totalConsumptionCost).replace('Rp ', '')}</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-slate-500">Rp</span>
-                <span className="text-sm font-bold text-indigo-400 tracking-tight">{formatRp(totalConsumptionCost).replace('Rp ', '')}</span>
-                <span className="text-[8px] text-indigo-500/50 font-bold ml-1">LINKED</span>
-              </div>
+              {renderExpenseToggleButton('consumption_total', {
+                name: 'Konsumsi Trip',
+                amount: totalConsumptionCost,
+                category: 'konsumsi',
+              }, true)}
             </div>
 
             {additionalCosts.map(c => (
-              <div key={c.id} className="bg-slate-900/40 border border-slate-800/30 rounded-xl p-3 flex justify-between items-center animate-in slide-in-from-left-4">
+              <div key={c.id} className="bg-slate-900/40 border border-slate-800/30 rounded-xl p-3 space-y-3 animate-in slide-in-from-left-4">
                 <input
                   value={c.name}
                   onChange={e => setAdditionalCosts(prev => prev.map(x => x.id === c.id ? { ...x, name: e.target.value } : x))}
@@ -498,6 +617,13 @@ export function TripCalculator({ totalCollected, memberCount, onClose }: TripCal
                   >
                     ×
                   </button>
+                </div>
+                <div className="flex justify-end">
+                  {renderExpenseToggleButton(`additional_${c.id}`, {
+                    name: c.name || 'Biaya Lainnya',
+                    amount: c.amount,
+                    category: 'lainnya',
+                  }, true)}
                 </div>
               </div>
             ))}
