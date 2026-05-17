@@ -312,7 +312,9 @@ export function TripExpenses({ totalCollected, onClose }: { totalCollected: numb
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <button
-                  onClick={copyToClipboard}
+                  onClick={() => {
+                    void copyToClipboard();
+                  }}
                   className="flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-slate-800 py-4 text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-95 hover:bg-slate-700"
                 >
                   Salin Teks
